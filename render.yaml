@@ -1,0 +1,16 @@
+# Render Blueprint for Backend Deployment
+services:
+  - type: web
+    name: whiteboard-backend
+    env: node
+    buildCommand: npm install && npx tsc -p tsconfig.server.json
+    startCommand: node server/dist/index.js
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: DB_NAME
+        value: whiteboard
+      - key: FRONTEND_URL
+        value: https://collaborative-white-board-wheat.vercel.app
+      - key: NODE_ENV
+        value: production

@@ -278,27 +278,101 @@ Frontend build will be in `dist/` directory.
 
 ## 🚢 Deployment
 
-### Deploy Backend (Heroku Example)
-```bash
-# Create Heroku app
-heroku create whiteboard-app
+### ⚠️ IMPORTANT: This app requires SEPARATE deployments for frontend and backend!
 
-# Set environment variables
-heroku config:set MONGO_URI="your_mongodb_uri"
-heroku config:set FRONTEND_URL="your_frontend_url"
+**Frontend (React)** → Deploy to **Vercel** or **Netlify**
+**Backend (Express + Socket.io)** → Deploy to **Render**, **Railway**, or **Fly.io**
+
+Vercel/Netlify **cannot run WebSocket servers** - they only serve static files!
+
+---
+
+### Step 1: Deploy Backend to Render (Free)
+
+1. **Go to [Render.com](https://render.com)** and sign up/login
+
+2. **Create a New Web Service**
+   - Click "New" → "Web Service"
+   - Connect your GitHub repository
+   - Select the WhiteBoard repo
+
+3. **Configure the Service**
+   ```
+   Name: whiteboard-backend
+   Environment: Node
+   Build Command: npm install && npm run build:server
+   Start Command: npm start
+   ```
+
+4. **Add Environment Variables** (in Render dashboard)
+   ```
+   MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/whiteboard?retryWrites=true&w=majority
+   DB_NAME=whiteboard
+   FRONTEND_URL=https://collaborative-white-board-wheat.vercel.app
+   NODE_ENV=production
+   ```
+
+5. **Deploy!** - Click "Create Web Service"
+
+6. **Copy your Render URL** (e.g., `https://whiteboard-backend.onrender.com`)
+
+---
+
+### Step 2: Update Frontend for Production
+
+1. **In Vercel Dashboard**, add this environment variable:
+   ```
+   VITE_SOCKET_URL=https://your-render-backend-url.onrender.com
+   ```
+   
+2. **Redeploy** on Vercel to apply the new environment variable
+
+---
+
+### Step 3: MongoDB Atlas Network Access
+
+1. Go to **MongoDB Atlas** → **Security** → **Network Access**
+2. Click **"Add IP Address"**
+3. Click **"Allow Access from Anywhere"** (adds `0.0.0.0/0`)
+4. Click **Confirm**
+
+This allows Render's servers to connect to your database.
+
+---
+
+### Alternative: Deploy Backend to Railway
+
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login
+railway login
+
+# Initialize project
+railway init
 
 # Deploy
-git push heroku main
+railway up
+
+# Set environment variables in Railway dashboard
 ```
 
-### Deploy Frontend (Vercel/Netlify Example)
-```bash
-# Build
-npm run build
+---
 
-# Deploy the dist/ folder
-# On Vercel: Push to Git and connect repo
-# On Netlify: Drag and drop dist/ folder
+### Alternative: Deploy using Docker (Any Platform)
+
+Create a `Dockerfile` for the backend:
+
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build:server
+EXPOSE 3000
+CMD ["npm", "start"]
 ```
 
 ## 📝 License
