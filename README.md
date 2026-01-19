@@ -170,8 +170,8 @@ WhiteBoard/
 │   │   └── BoardSetup.tsx   # Setup/join page
 │   ├── lib/
 │   │   ├── socket.ts        # Socket.io setup
-│   │   ├── userSession.ts   # Session management
-│   │   └── supabase.ts      # (Deprecated)
+│   │   ├── api.ts           # API configuration
+│   │   └── userSession.ts   # Session management
 │   ├── App.tsx              # Main app
 │   ├── index.css            # Global styles
 │   └── main.tsx             # Entry point
