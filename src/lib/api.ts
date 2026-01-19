@@ -1,9 +1,15 @@
 // API Configuration for frontend
 // Uses environment variable or falls back to Render production URL
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  import.meta.env.VITE_SOCKET_URL || 
-  'https://whiteboard-backend-rzxs.onrender.com';
+const getBaseUrl = () => {
+  const url = import.meta.env.VITE_API_URL || 
+    import.meta.env.VITE_SOCKET_URL || 
+    'https://whiteboard-backend-rzxs.onrender.com';
+  // Remove trailing slash if present
+  return url.replace(/\/$/, '');
+};
+
+export const API_BASE_URL = getBaseUrl();
 
 export const api = {
   createBoard: `${API_BASE_URL}/api/board/create`,
