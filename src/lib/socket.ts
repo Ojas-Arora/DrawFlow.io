@@ -6,7 +6,11 @@ export function initSocket(): Socket {
   if (socket) return socket;
 
   // Use Vite's import.meta.env for environment variables
-  const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+  // For production, set VITE_SOCKET_URL in Vercel environment variables
+  const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://whiteboard-backend-rzxs.onrender.com';
+  
+  console.log('🔌 Connecting to socket server:', SOCKET_URL);
+  
   socket = io(SOCKET_URL, {
     reconnection: true,
     reconnectionDelay: 1000,
