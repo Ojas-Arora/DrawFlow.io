@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { Trash2, Users } from 'lucide-react';
 import { getUserId, getUsername, getUserColor } from '../lib/userSession';
 import { getSocket } from '../lib/socket';
+import { api } from '../lib/api';
 
 type Tool = 'pen' | 'eraser';
 
@@ -41,7 +42,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
 
   const loadDrawingHistory = useCallback(async () => {
     try {
-      const response = await fetch(`/api/board/${boardId}/history`);
+      const response = await fetch(api.getBoardHistory(boardId));
       const { drawingEvents } = await response.json();
 
       const canvas = canvasRef.current;

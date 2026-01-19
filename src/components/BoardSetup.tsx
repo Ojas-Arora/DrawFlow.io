@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PlusCircle, LogIn, Sparkles, Users, Palette, MessageSquare, Zap } from 'lucide-react';
 import { getUsername, setUsername as saveUsername, getUserId, getUserColor } from '../lib/userSession';
+import { api } from '../lib/api';
 
 interface BoardSetupProps {
   onBoardSelect: (boardId: string) => void;
@@ -35,7 +36,7 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
       saveUsername(username);
 
       const userId = getUserId();
-      const response = await fetch('/api/board/create', {
+      const response = await fetch(api.createBoard, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
