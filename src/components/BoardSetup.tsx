@@ -100,12 +100,8 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
             </div>
             
             <h1 className="text-5xl lg:text-6xl font-bold">
-              <span className="bg-gradient-to-r from-white via-purple-200 to-cyan-200 bg-clip-text text-transparent">
-                Collaborative
-              </span>
-              <br />
               <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Whiteboard
+                DrawFlow.io
               </span>
             </h1>
             

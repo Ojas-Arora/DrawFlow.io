@@ -178,6 +178,7 @@ app.get('/api/board/:boardId/history', async (req, res) => {
 // Socket.io Events
 const activeUsers: Map<string, { userId: string; boardId: string; username: string; color: string }> = new Map();
 const boardRooms: Map<string, Set<string>> = new Map();
+const userCursors: Map<string, { odId: string; boardId: string; x: number; y: number; isDrawing: boolean }> = new Map();
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
@@ -204,15 +205,46 @@ io.on('connection', (socket) => {
       console.error('Error updating board:', error);
     }
 
+    // Get all active users in the room with their details
+    const roomUsers: { odId: string; username: string; color: string }[] = [];
+    boardRooms.get(boardId)?.forEach((socketId) => {
+      const user = activeUsers.get(socketId);
+      if (user) {
+        roomUsers.push({ odId: user.userId, username: user.username, color: user.color });
+      }
+    });
+
     // Notify all users in the room
     io.to(boardId).emit('user-joined', {
-      userId,
+      odId: userId,
       username,
       color,
       activeUsersCount: boardRooms.get(boardId)?.size || 0,
+      allUsers: roomUsers,
     });
 
     console.log(`User ${username} joined board ${boardId}`);
+  });
+
+  // Cursor movement tracking
+  socket.on('cursor-move', (data: { boardId: string; x: number; y: number; isDrawing: boolean }) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    const { boardId, x, y, isDrawing } = data;
+    
+    // Store cursor position
+    userCursors.set(socket.id, { odId: user.userId, boardId, x, y, isDrawing });
+
+    // Broadcast cursor to all other users in the room
+    socket.to(boardId).emit('cursor-update', {
+      odId: user.userId,
+      username: user.username,
+      color: user.color,
+      x,
+      y,
+      isDrawing,
+    });
   });
 
   socket.on('draw', async (data: { boardId: string; x: number; y: number; prevX: number; prevY: number; color: string; lineWidth: number; tool: string }) => {
@@ -298,8 +330,9 @@ io.on('connection', (socket) => {
     if (user) {
       const { boardId, userId, username } = user;
 
-      // Remove from active users
+      // Remove from active users and cursors
       activeUsers.delete(socket.id);
+      userCursors.delete(socket.id);
       const room = boardRooms.get(boardId);
       if (room) {
         room.delete(socket.id);
@@ -323,8 +356,11 @@ io.on('connection', (socket) => {
         }
       }
 
+      // Notify about cursor removal
+      io.to(boardId).emit('cursor-remove', { odId: userId });
+
       io.to(boardId).emit('user-left', {
-        userId,
+        odId: userId,
         username,
         activeUsersCount: room?.size || 0,
       });

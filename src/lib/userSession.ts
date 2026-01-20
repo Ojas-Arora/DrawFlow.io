@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-const SESSION_KEY = 'whiteboard_session';
+const SESSION_KEY = 'drawflow_session';
 
 interface Session {
   userId: string;

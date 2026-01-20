@@ -1,6 +1,6 @@
-# 🎨 Collaborative Whiteboard - Real-time Drawing & Chat Platform
+# 🎨 DrawFlow.io - Real-time Drawing & Chat Platform
 
-A modern, feature-rich collaborative whiteboard application built with **React**, **Node.js**, **Socket.io**, and **MongoDB**.
+A modern, feature-rich collaborative drawing application built with **React**, **Node.js**, **Socket.io**, and **MongoDB**.
 
 ## ✨ Features
 
