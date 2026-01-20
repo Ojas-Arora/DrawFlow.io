@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import { Copy, Check, LogOut, Share2, Users, Sparkles } from 'lucide-react';
+import { Copy, Check, LogOut, Share2, UserCircle } from 'lucide-react';
 import BoardSetup from './components/BoardSetup';
 import Whiteboard from './components/Whiteboard';
 import Chat from './components/Chat';
+import UserProfile from './components/UserProfile';
+import { getOrCreateSession } from './lib/userSession';
 
 function App() {
   const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(getOrCreateSession());
 
   const copyBoardId = () => {
     if (currentBoardId) {
@@ -30,9 +34,11 @@ function App() {
       <header className="bg-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 shadow-xl">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-xl shadow-lg">
-              <Sparkles size={24} className="text-white" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="DrawFlow.io" 
+              className="w-10 h-10 rounded-xl shadow-lg object-cover"
+            />
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
                 DrawFlow.io
@@ -62,6 +68,22 @@ function App() {
               </button>
             </div>
 
+            {/* User Profile Button */}
+            <button
+              onClick={() => setIsProfileOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-600/50 rounded-xl border border-slate-600/50 transition-all"
+              title="User Profile"
+            >
+              <div 
+                className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
+                style={{ backgroundColor: currentUser.userColor }}
+              >
+                {currentUser.username.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm text-slate-300 hidden sm:block">{currentUser.username}</span>
+              <UserCircle size={16} className="text-cyan-400" />
+            </button>
+
             {/* Leave Button */}
             <button
               onClick={leaveBoard}
@@ -86,6 +108,18 @@ function App() {
           <Chat boardId={currentBoardId} />
         </div>
       </div>
+
+      {/* User Profile Modal */}
+      <UserProfile 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)}
+        onUsernameChange={(newUsername) => {
+          setCurrentUser(prev => ({ ...prev, username: newUsername }));
+        }}
+        onColorChange={(newColor) => {
+          setCurrentUser(prev => ({ ...prev, userColor: newColor }));
+        }}
+      />
     </div>
   );
 }

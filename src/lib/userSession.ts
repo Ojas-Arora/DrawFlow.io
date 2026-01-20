@@ -7,6 +7,7 @@ interface Session {
   username: string;
   userColor: string;
   createdAt: number;
+  lastLogin: number;
 }
 
 function getRandomColor(): string {
@@ -19,17 +20,23 @@ export function getOrCreateSession(): Session {
   
   if (stored) {
     try {
-      return JSON.parse(stored);
+      const session = JSON.parse(stored);
+      // Update last login time
+      session.lastLogin = Date.now();
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      return session;
     } catch {
       // Invalid session, create new one
     }
   }
 
+  const now = Date.now();
   const session: Session = {
     userId: uuidv4(),
     username: `User-${Math.random().toString(36).substr(2, 9)}`,
     userColor: getRandomColor(),
-    createdAt: Date.now(),
+    createdAt: now,
+    lastLogin: now,
   };
 
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
@@ -51,6 +58,12 @@ export function getUserColor(): string {
 export function setUsername(username: string): void {
   const session = getOrCreateSession();
   session.username = username;
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+}
+
+export function setUserColor(color: string): void {
+  const session = getOrCreateSession();
+  session.userColor = color;
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 

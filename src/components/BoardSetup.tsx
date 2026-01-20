@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PlusCircle, LogIn, Sparkles, Users, Palette, MessageSquare, Zap } from 'lucide-react';
+import { PlusCircle, LogIn, Users, Palette, MessageSquare, Zap } from 'lucide-react';
 import { getUsername, setUsername as saveUsername, getUserId, getUserColor } from '../lib/userSession';
 import { api } from '../lib/api';
 
@@ -138,15 +138,14 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-3xl blur-xl opacity-30"></div>
             <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl">
-              {/* User avatar */}
+              {/* Logo */}
               <div className="flex justify-center mb-6">
                 <div className="relative">
-                  <div
-                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300"
-                    style={{ backgroundColor: userColor }}
-                  >
-                    🎨
-                  </div>
+                  <img 
+                    src="/logo.png" 
+                    alt="DrawFlow.io" 
+                    className="w-20 h-20 rounded-2xl shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300 object-cover"
+                  />
                   <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold border-4 border-slate-900">
                     ✓
                   </div>
@@ -193,7 +192,7 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
                     disabled={!boardName.trim() || !username.trim() || isLoading}
                     className="w-full px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-cyan-500/25 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                   >
-                    <Sparkles size={18} />
+                    <PlusCircle size={18} />
                     {isLoading ? 'Creating...' : 'Create Board'}
                   </button>
                 </form>
