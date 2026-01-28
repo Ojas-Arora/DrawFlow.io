@@ -158,6 +158,45 @@ app.post('/api/board/create', async (req, res) => {
   }
 });
 
+// Validate if board exists before joining
+app.get('/api/board/:boardId/validate', async (req, res) => {
+  try {
+    const { boardId } = req.params;
+    const board = await Board.findOne({ boardId }).exec();
+
+    if (!board) {
+      return res.status(404).json({
+        success: false,
+        error: 'Board not found',
+        message: 'The board you are trying to join does not exist. Please check the Board ID and try again.',
+      });
+    }
+
+    // Check if board is still active
+    if (!board.isActive) {
+      return res.status(403).json({
+        success: false,
+        error: 'Board inactive',
+        message: 'This board has been deactivated and is no longer available.',
+      });
+    }
+
+    res.json({
+      success: true,
+      board: {
+        boardId: board.boardId,
+        title: board.title,
+        createdBy: board.createdBy,
+        createdAt: board.createdAt,
+        activeUsersCount: board.activeUsers?.length || 0,
+      },
+    });
+  } catch (error) {
+    console.error('Error validating board:', error);
+    res.status(500).json({ success: false, error: 'Failed to validate board' });
+  }
+});
+
 app.get('/api/board/:boardId/history', async (req, res) => {
   try {
     const { boardId } = req.params;
@@ -287,21 +326,156 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('clear-board', async (boardId: string) => {
+  socket.on('clear-board', async (data: { boardId: string; backgroundColor?: string } | string) => {
     const user = activeUsers.get(socket.id);
     if (!user) return;
 
-    io.to(boardId).emit('clear-board');
+    // Support both old format (just boardId string) and new format (object with boardId and backgroundColor)
+    const boardId = typeof data === 'string' ? data : data.boardId;
+    const backgroundColor = typeof data === 'string' ? '#FFFFFF' : (data.backgroundColor || '#FFFFFF');
+
+    io.to(boardId).emit('clear-board', { backgroundColor });
 
     try {
       await DrawingEvent.create({
         boardId,
         userId: user.userId,
         eventType: 'clear',
-        data: {},
+        data: { backgroundColor },
       });
     } catch (error) {
       console.error('Error saving clear event:', error);
+    }
+  });
+
+  // Shape drawing event
+  socket.on('shape', async (data: { boardId: string; type: string; startX: number; startY: number; endX: number; endY: number; color: string; lineWidth: number; strokeStyle: string; opacity: number }) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    const { boardId, ...shapeData } = data;
+
+    // Broadcast to all users in the room
+    socket.to(boardId).emit('shape', shapeData);
+
+    // Save to database
+    try {
+      await DrawingEvent.create({
+        boardId,
+        userId: user.userId,
+        eventType: 'shape',
+        data: shapeData,
+      });
+    } catch (error) {
+      console.error('Error saving shape event:', error);
+    }
+  });
+
+  // Text drawing event
+  socket.on('text', async (data: { boardId: string; x: number; y: number; text: string; color: string; fontSize: number }) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    const { boardId, ...textData } = data;
+
+    // Broadcast to all users in the room
+    socket.to(boardId).emit('text', textData);
+
+    // Save to database
+    try {
+      await DrawingEvent.create({
+        boardId,
+        userId: user.userId,
+        eventType: 'text',
+        data: textData,
+      });
+    } catch (error) {
+      console.error('Error saving text event:', error);
+    }
+  });
+
+  // Laser pointer event (real-time only, not saved)
+  socket.on('laser', (data: { boardId: string; x: number; y: number; color: string; username: string }) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    const { boardId, x, y, color, username } = data;
+
+    // Broadcast laser position to all users in the room
+    socket.to(boardId).emit('laser', {
+      odId: user.userId,
+      x,
+      y,
+      color,
+      username,
+    });
+  });
+
+  // Sticky note creation
+  socket.on('stickynote', async (data: { boardId: string; id: string; x: number; y: number; text: string; color: string; width: number; height: number }) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    const { boardId, ...noteData } = data;
+
+    // Broadcast to all users in the room
+    socket.to(boardId).emit('stickynote', noteData);
+
+    // Save to database
+    try {
+      await DrawingEvent.create({
+        boardId,
+        userId: user.userId,
+        eventType: 'stickynote',
+        data: noteData,
+      });
+    } catch (error) {
+      console.error('Error saving stickynote event:', error);
+    }
+  });
+
+  // Sticky note update
+  socket.on('stickynote-update', (data: { boardId: string; id: string; x: number; y: number; text: string; color: string; width: number; height: number }) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    const { boardId, ...noteData } = data;
+
+    // Broadcast update to all users in the room
+    socket.to(boardId).emit('stickynote-update', noteData);
+  });
+
+  // Sticky note delete
+  socket.on('stickynote-delete', (data: { boardId: string; id: string }) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    const { boardId, id } = data;
+
+    // Broadcast delete to all users in the room
+    socket.to(boardId).emit('stickynote-delete', { id });
+  });
+
+  // Highlight event
+  socket.on('highlight', async (data: { boardId: string; x: number; y: number; prevX: number; prevY: number; color: string }) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    const { boardId, ...highlightData } = data;
+
+    // Broadcast to all users in the room
+    socket.to(boardId).emit('highlight', highlightData);
+
+    // Save to database
+    try {
+      await DrawingEvent.create({
+        boardId,
+        userId: user.userId,
+        eventType: 'highlight',
+        data: highlightData,
+      });
+    } catch (error) {
+      console.error('Error saving highlight event:', error);
     }
   });
 

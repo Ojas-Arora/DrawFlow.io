@@ -66,11 +66,27 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
     setIsLoading(true);
     setError('');
     try {
+      // First validate that the board exists in the database
+      const response = await fetch(api.validateBoard(joinBoardId.trim()));
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        if (response.status === 404) {
+          setError('Board not found! This Board ID does not exist. Please check the ID and try again, or create a new board.');
+        } else if (response.status === 403) {
+          setError('This board has been deactivated and is no longer available.');
+        } else {
+          setError(data.message || 'Failed to join board. Please try again.');
+        }
+        return;
+      }
+
+      // Board exists and is valid, proceed to join
       saveUsername(username);
       onBoardSelect(joinBoardId.trim());
     } catch (error) {
       console.error('Error joining board:', error);
-      setError('Failed to join board. Please try again.');
+      setError('Failed to connect to server. Please check your internet connection and try again.');
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, User, Edit2, Check, Clock, Calendar, Palette } from 'lucide-react';
+import { X, User, Edit2, Check, Palette } from 'lucide-react';
 import { getOrCreateSession, setUsername, setUserColor } from '../lib/userSession';
 
 const AVAILABLE_COLORS = [
@@ -28,40 +28,14 @@ export default function UserProfile({ isOpen, onClose, onUsernameChange, onColor
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingColor, setIsEditingColor] = useState(false);
   const [newUsername, setNewUsername] = useState(session.username);
-  const [lastLogin, setLastLogin] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
       const currentSession = getOrCreateSession() as Session;
       setSession(currentSession);
       setNewUsername(currentSession.username);
-      
-      // Format last login time
-      const loginDate = new Date(currentSession.lastLogin || currentSession.createdAt);
-      setLastLogin(formatLastLogin(loginDate));
     }
   }, [isOpen]);
-
-  const formatLastLogin = (date: Date): string => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const handleSaveUsername = () => {
     if (newUsername.trim() && newUsername !== session.username) {
@@ -88,15 +62,6 @@ export default function UserProfile({ isOpen, onClose, onUsernameChange, onColor
     setSession(updatedSession);
     onColorChange?.(color);
     setIsEditingColor(false);
-  };
-
-  const getCreatedDate = (): string => {
-    const date = new Date(session.createdAt);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
   };
 
   if (!isOpen) return null;
@@ -223,27 +188,6 @@ export default function UserProfile({ isOpen, onClose, onUsernameChange, onColor
               )}
             </div>
 
-            {/* Last Login */}
-            <div className="flex items-center gap-3 p-3 bg-slate-700/30 rounded-xl border border-slate-600/30">
-              <div className="p-2 bg-slate-700 rounded-lg">
-                <Clock size={18} className="text-cyan-400" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Last Login</p>
-                <p className="text-white font-medium">{lastLogin}</p>
-              </div>
-            </div>
-
-            {/* Account Created */}
-            <div className="flex items-center gap-3 p-3 bg-slate-700/30 rounded-xl border border-slate-600/30">
-              <div className="p-2 bg-slate-700 rounded-lg">
-                <Calendar size={18} className="text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Account Created</p>
-                <p className="text-white font-medium">{getCreatedDate()}</p>
-              </div>
-            </div>
           </div>
 
           {/* Tips */}

@@ -12,17 +12,12 @@ const DrawingEventSchema = new mongoose.Schema({
   },
   eventType: {
     type: String,
-    enum: ['draw', 'erase', 'clear'],
+    enum: ['draw', 'erase', 'clear', 'shape', 'text', 'stickynote', 'highlight', 'image'],
     default: 'draw',
   },
   data: {
-    x: Number,
-    y: Number,
-    prevX: Number,
-    prevY: Number,
-    color: String,
-    lineWidth: Number,
-    tool: String,
+    type: mongoose.Schema.Types.Mixed,
+    default: {},
   },
   createdAt: {
     type: Date,
