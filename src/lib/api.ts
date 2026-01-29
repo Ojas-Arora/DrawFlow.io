@@ -15,6 +15,7 @@ export const api = {
   createBoard: `${API_BASE_URL}/api/board/create`,
   createUser: `${API_BASE_URL}/api/user/create`,
   validateBoard: (boardId: string) => `${API_BASE_URL}/api/board/${boardId}/validate`,
+  verifyBoardPassword: (boardId: string) => `${API_BASE_URL}/api/board/${boardId}/verify-password`,
   getBoardHistory: (boardId: string) => `${API_BASE_URL}/api/board/${boardId}/history`,
   health: `${API_BASE_URL}/api/health`,
 };

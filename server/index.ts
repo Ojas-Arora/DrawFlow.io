@@ -141,17 +141,33 @@ app.post('/api/user/create', async (req, res) => {
 
 app.post('/api/board/create', async (req, res) => {
   try {
-    const { userId, title } = req.body;
+    const { userId, title, isPrivate, password } = req.body;
     const boardId = uuidv4();
 
-    const board = await Board.create({
+    const boardData: any = {
       boardId,
       title: title || 'Untitled Board',
       createdBy: userId,
       activeUsers: [userId],
-    });
+      isPrivate: isPrivate || false,
+    };
 
-    res.json({ success: true, board });
+    // Only set password if room is private
+    if (isPrivate && password) {
+      boardData.password = password;
+    }
+
+    const board = await Board.create(boardData);
+
+    res.json({ 
+      success: true, 
+      board: {
+        boardId: board.boardId,
+        title: board.title,
+        createdBy: board.createdBy,
+        isPrivate: board.isPrivate,
+      }
+    });
   } catch (error) {
     console.error('Error creating board:', error);
     res.status(500).json({ success: false, error: 'Failed to create board' });
@@ -189,11 +205,48 @@ app.get('/api/board/:boardId/validate', async (req, res) => {
         createdBy: board.createdBy,
         createdAt: board.createdAt,
         activeUsersCount: board.activeUsers?.length || 0,
+        isPrivate: board.isPrivate || false,
       },
     });
   } catch (error) {
     console.error('Error validating board:', error);
     res.status(500).json({ success: false, error: 'Failed to validate board' });
+  }
+});
+
+// Verify password for private board
+app.post('/api/board/:boardId/verify-password', async (req, res) => {
+  try {
+    const { boardId } = req.params;
+    const { password } = req.body;
+
+    const board = await Board.findOne({ boardId }).exec();
+
+    if (!board) {
+      return res.status(404).json({
+        success: false,
+        error: 'Board not found',
+      });
+    }
+
+    if (!board.isPrivate) {
+      return res.json({ success: true, message: 'Board is public' });
+    }
+
+    const isMatch = await (board as any).comparePassword(password);
+    
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid password',
+        message: 'The password you entered is incorrect.',
+      });
+    }
+
+    res.json({ success: true, message: 'Password verified' });
+  } catch (error) {
+    console.error('Error verifying password:', error);
+    res.status(500).json({ success: false, error: 'Failed to verify password' });
   }
 });
 
