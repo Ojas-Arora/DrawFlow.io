@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, Check, LogOut, Share2, UserCircle } from 'lucide-react';
+import { Copy, Check, LogOut, Share2, UserCircle, MessageCircle, ChevronRight, ChevronLeft } from 'lucide-react';
 import BoardSetup from './components/BoardSetup';
 import Whiteboard from './components/Whiteboard';
 import Chat from './components/Chat';
@@ -11,6 +11,7 @@ function App() {
   const [copied, setCopied] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(getOrCreateSession());
+  const [showChat, setShowChat] = useState(true);
 
   const copyBoardId = () => {
     if (currentBoardId) {
@@ -97,16 +98,120 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Whiteboard Area */}
-        <div className="flex-1 m-2 mr-1 bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Whiteboard Area - expands to fill available space */}
+        <div className="flex-1 m-2 bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50 transition-all duration-300">
           <Whiteboard boardId={currentBoardId} />
         </div>
         
+        {/* Chat Toggle Button - Modern Floating Action Button */}
+        <button
+          onClick={() => setShowChat(!showChat)}
+          className="fixed top-1/2 -translate-y-1/2 z-50 group"
+          style={{ right: showChat ? '328px' : '12px' }}
+          title={showChat ? 'Hide Chat' : 'Show Chat'}
+        >
+          {/* Outer glow ring */}
+          <div className={`absolute inset-0 rounded-2xl transition-all duration-700 ${
+            !showChat 
+              ? 'animate-spin-slow bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 blur-md opacity-70' 
+              : ''
+          }`} style={{ animationDuration: '3s' }} />
+          
+          {/* Main button */}
+          <div className={`relative flex flex-col items-center gap-1 transition-all duration-500 ${
+            showChat 
+              ? 'bg-slate-800/95 backdrop-blur-xl border border-slate-600/80 rounded-l-2xl px-2 py-3' 
+              : 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl px-3 py-4 shadow-2xl'
+          }`}>
+            {/* Shimmer effect when closed */}
+            {!showChat && (
+              <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              </div>
+            )}
+            
+            {/* Chat bubble icon with float animation */}
+            <div className={`relative z-10 ${!showChat ? 'animate-float' : ''}`}>
+              <MessageCircle 
+                size={22} 
+                className={`transition-all duration-300 ${
+                  showChat 
+                    ? 'text-slate-400 group-hover:text-white' 
+                    : 'text-white drop-shadow-lg'
+                }`} 
+                fill={!showChat ? 'rgba(255,255,255,0.2)' : 'none'}
+              />
+              {/* Typing dots animation when closed */}
+              {!showChat && (
+                <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
+                  <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              )}
+            </div>
+            
+            {/* Vertical text "CHAT" when closed */}
+            {!showChat && (
+              <div className="relative z-10 flex flex-col items-center mt-1">
+                {'CHAT'.split('').map((letter, i) => (
+                  <span 
+                    key={i} 
+                    className="text-[10px] font-bold text-white/90 leading-tight"
+                    style={{ 
+                      animationDelay: `${i * 100}ms`,
+                      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}
+                  >
+                    {letter}
+                  </span>
+                ))}
+              </div>
+            )}
+            
+            {/* Arrow when open */}
+            {showChat && (
+              <ChevronRight size={16} className="text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+            )}
+            
+            {/* Online indicator dot */}
+            <div className={`absolute -top-1 -right-1 transition-all duration-300 ${
+              !showChat 
+                ? 'w-4 h-4 bg-green-400 rounded-full border-2 border-white shadow-lg shadow-green-400/50' 
+                : 'w-2 h-2 bg-green-400 rounded-full'
+            }`}>
+              {!showChat && (
+                <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75" />
+              )}
+            </div>
+          </div>
+        </button>
+        
+        {/* Add custom keyframes for float animation */}
+        <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+          }
+          .animate-float {
+            animation: float 2s ease-in-out infinite;
+          }
+          @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          .animate-spin-slow {
+            animation: spin-slow 3s linear infinite;
+          }
+        `}</style>
+
         {/* Chat Sidebar */}
-        <div className="w-80 m-2 ml-1 bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50">
-          <Chat boardId={currentBoardId} />
-        </div>
+        {showChat && (
+          <div className="w-80 m-2 ml-1 flex-shrink-0 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700/50 transition-all duration-300">
+            <Chat boardId={currentBoardId} />
+          </div>
+        )}
       </div>
 
       {/* User Profile Modal */}

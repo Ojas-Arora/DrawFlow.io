@@ -1,15 +1,69 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { 
   Trash2, Users, Pencil, Square, Circle, Minus, ArrowRight, 
   Type, Undo2, Redo2, Download, MousePointer, Hand, Highlighter,
   Image as ImageIcon, StickyNote, Pointer, Paintbrush, Eraser, Triangle,
-  Star, Heart, PenTool, X
+  Star, Heart, PenTool, X, Sun, Moon, Grid3X3, ChevronLeft, ChevronRight,
+  ChevronDown, Hexagon, Diamond, Octagon, Pentagon, Database, Cloud,
+  MessageSquare, FileText, Workflow, GitBranch, Box, Layers, Zap,
+  Shield, Flag, Bookmark, Bell, Camera, Lock, Unlock, Settings,
+  ArrowUp, ArrowDown, ArrowUpRight, ArrowDownRight, ArrowUpLeft, ArrowDownLeft,
+  CornerUpRight, CornerDownRight, CornerUpLeft, CornerDownLeft,
+  MoveRight, MoveLeft, MoveUp, MoveDown, Maximize2, Minimize2,
+  Save, Upload, FolderOpen, Shapes, Sparkles, LayoutGrid,
+  // New imports for extended shapes
+  Server, HardDrive, Wifi, Globe, Cpu, Monitor, Smartphone, Tablet,
+  Watch, Tv, Speaker, Headphones, Printer,
+  User, UserPlus, UserCheck, UserX, UsersRound, Building, Building2,
+  CheckCircle, XCircle, AlertCircle, AlertTriangle, Info, HelpCircle,
+  File, FileCode, FileJson, Folder, FolderArchive, Code, Terminal,
+  Mail, Send, Inbox, MessageCircle, Phone, PhoneCall, Share2,
+  Key, KeyRound, ShieldCheck, ShieldAlert, Eye, EyeOff, Fingerprint,
+  Plus, Check, RefreshCw, RotateCw, Search,
+  Lightbulb, Target, Crosshair, Tag, Award, Trophy, Flame, Puzzle, Compass,
+  TrendingUp, TrendingDown, Activity, BarChart3, PieChart, LineChart,
+  Play, Pause, StopCircle, SkipForward, SkipBack,
+  Table, List, ListOrdered, TreePine, Network, Binary, Braces, Hash,
+  Package, Component, Boxes, Link2, Unlink, ArrowLeftRight, Merge, Split,
+  GitCommit, GitMerge, GitPullRequest, Bug, CheckCheck, XOctagon,
+  CircleDot, SquareDot, Dot, Grip, Move
 } from 'lucide-react';
 import { getUserId, getUsername, getUserColor } from '../lib/userSession';
 import { getSocket } from '../lib/socket';
 import { api } from '../lib/api';
 
-type Tool = 'select' | 'pan' | 'pen' | 'eraser' | 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'highlighter' | 'laser' | 'stickynote' | 'image' | 'triangle' | 'star' | 'heart';
+type Tool = 'select' | 'pan' | 'pen' | 'eraser' | 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'highlighter' | 'laser' | 'stickynote' | 'image' | 'triangle' | 'star' | 'heart' | 'diamond' | 'hexagon' | 'parallelogram' | 'cylinder' | 'cloud' | 'callout' | 'document' | 'database' | 'process' | 'decision' | 'connector' | 'pentagon' | 'octagon' | 'icon' | 
+// System Design shapes
+'server' | 'storage' | 'firewall' | 'processor' | 'client' | 'mobile' | 'loadbalancer' | 'cache' | 'messagequeue' | 'internet' | 'layers' |
+// Coding/Tech shapes  
+'terminal' | 'codeblock' | 'jsonobject' | 'binaryarray' | 'function' | 'gitcommit' | 'gitbranch' | 'gitmerge' | 'gitpr' | 'sourcefile' | 'bug' | 'success' | 'error' | 'warning' |
+// Files & Folders
+'file' | 'codefile' | 'textfile' | 'folder' | 'archive' |
+// Communication
+'email' | 'send' | 'inbox' | 'chat' | 'discussion' | 'phone' | 'phonecall' | 'share' |
+// Devices
+'desktop' | 'tablet' | 'watch' | 'tv' | 'speaker' | 'headphones' | 'camera' | 'printer' |
+// Security
+'lock' | 'unlock' | 'key' | 'apikey' | 'shield' | 'secured' | 'vulnerable' | 'biometric' | 'visible' | 'hidden' |
+// People
+'user' | 'usersgroup' | 'adduser' | 'verifieduser' | 'removeuser' | 'organization' | 'company' |
+// Status
+'successcircle' | 'errorcircle' | 'alertcircle' | 'info' | 'help' | 'notification' | 'flag' |
+// Actions
+'add' | 'remove' | 'check' | 'close' | 'refresh' | 'rotate' | 'download' | 'upload' | 'search' | 'settings' |
+// Charts
+'barchart' | 'piechart' | 'linechart' | 'trendup' | 'trenddown' | 'activity' |
+// Misc
+'idea' | 'target' | 'focus' | 'bookmark' | 'tag' | 'award' | 'trophy' | 'lightning' | 'fire' | 'puzzle' | 'compass' |
+// Data Structures
+'array' | 'stack' | 'queue' | 'node' | 'pointer' | 'treenode' | 'hashtable' | 'graphnode' | 'heap' | 'linkedlist' |
+// Arrows
+'arrowup' | 'arrowdown' | 'arrowleft' | 'diagonalur' | 'diagonaldr' | 'diagonalul' | 'diagonaldl' | 'cornerur' | 'cornerdr' | 'bidirectional' |
+// UML
+'class' | 'interface' | 'package' | 'object' | 'composition' | 'actor' | 'lifeline' | 'activation' | 'message' | 'loop' | 'altfragment' |
+// ER
+'entity' | 'relationship' | 'attribute' | 'primarykey' | 'foreignkey' | 'table';
 
 interface WhiteboardProps {
   boardId: string;
@@ -63,7 +117,7 @@ interface PlacedImage {
 }
 
 interface ShapeData {
-  type: 'rectangle' | 'circle' | 'line' | 'arrow' | 'triangle' | 'star' | 'heart';
+  type: Tool;
   startX: number;
   startY: number;
   endX: number;
@@ -89,6 +143,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const boardFileInputRef = useRef<HTMLInputElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState<Tool>('pen');
   const [color, setColor] = useState('#000000');
@@ -122,6 +177,19 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(100);
+  const [darkMode, setDarkMode] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
+  const [showShapesSidebar, setShowShapesSidebar] = useState(true);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>(['General']);
+  const [shapeSearch, setShapeSearch] = useState('');
+  const [selectedShapeIcon, setSelectedShapeIcon] = useState<{ icon: any; label: string } | null>(null);
+  
+  // Cache for rendered icon images
+  const iconImageCache = useRef<Map<string, HTMLImageElement>>(new Map());
+  
+  // Store background colors for light/dark mode switching
+  const lightModeBgRef = useRef('#FFFFFF');
+  const darkModeBgRef = useRef('#1a1a2e');
 
   const zoomIn = useCallback(() => {
     setZoom(prev => Math.min(prev + 25, 200));
@@ -131,14 +199,271 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     setZoom(prev => Math.max(prev - 25, 25));
   }, []);
 
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  // Shape categories like diagrams.net
+  const shapeCategories = [
+    {
+      name: 'General',
+      shapes: [
+        { id: 'rectangle', icon: Square, label: 'Rectangle' },
+        { id: 'circle', icon: Circle, label: 'Circle' },
+        { id: 'triangle', icon: Triangle, label: 'Triangle' },
+        { id: 'diamond', icon: Diamond, label: 'Diamond' },
+        { id: 'hexagon', icon: Hexagon, label: 'Hexagon' },
+        { id: 'star', icon: Star, label: 'Star' },
+        { id: 'heart', icon: Heart, label: 'Heart' },
+        { id: 'cloud', icon: Cloud, label: 'Cloud' },
+        { id: 'pentagon', icon: Pentagon, label: 'Pentagon' },
+        { id: 'octagon', icon: Octagon, label: 'Octagon' },
+      ]
+    },
+    {
+      name: 'Basic',
+      shapes: [
+        { id: 'line', icon: Minus, label: 'Line' },
+        { id: 'arrow', icon: ArrowRight, label: 'Arrow' },
+        { id: 'bidirectional', icon: ArrowLeftRight, label: 'Bidirectional' },
+        { id: 'text', icon: Type, label: 'Text' },
+        { id: 'stickynote', icon: StickyNote, label: 'Sticky Note' },
+        { id: 'image', icon: ImageIcon, label: 'Image' },
+      ]
+    },
+    {
+      name: 'Arrows',
+      shapes: [
+        { id: 'arrow', icon: ArrowRight, label: 'Right' },
+        { id: 'arrowup', icon: ArrowUp, label: 'Up' },
+        { id: 'arrowdown', icon: ArrowDown, label: 'Down' },
+        { id: 'arrowleft', icon: MoveLeft, label: 'Left' },
+        { id: 'diagonalur', icon: ArrowUpRight, label: 'Diagonal ↗' },
+        { id: 'diagonaldr', icon: ArrowDownRight, label: 'Diagonal ↘' },
+        { id: 'diagonalul', icon: ArrowUpLeft, label: 'Diagonal ↖' },
+        { id: 'diagonaldl', icon: ArrowDownLeft, label: 'Diagonal ↙' },
+        { id: 'cornerur', icon: CornerUpRight, label: 'Corner ↱' },
+        { id: 'cornerdr', icon: CornerDownRight, label: 'Corner ↳' },
+        { id: 'bidirectional', icon: ArrowLeftRight, label: 'Bidirectional' },
+      ]
+    },
+    {
+      name: 'Flowchart',
+      shapes: [
+        { id: 'rectangle', icon: Square, label: 'Process' },
+        { id: 'diamond', icon: Diamond, label: 'Decision' },
+        { id: 'circle', icon: Circle, label: 'Start/End' },
+        { id: 'layers', icon: Layers, label: 'Input/Output' },
+        { id: 'cylinder', icon: Database, label: 'Database' },
+        { id: 'document', icon: FileText, label: 'Document' },
+        { id: 'callout', icon: MessageSquare, label: 'Callout' },
+        { id: 'hexagon', icon: Hexagon, label: 'Preparation' },
+      ]
+    },
+    {
+      name: 'Data Structures',
+      shapes: [
+        { id: 'array', icon: Table, label: 'Array' },
+        { id: 'stack', icon: List, label: 'Stack' },
+        { id: 'queue', icon: ListOrdered, label: 'Queue' },
+        { id: 'node', icon: CircleDot, label: 'Node' },
+        { id: 'pointer', icon: ArrowRight, label: 'Pointer' },
+        { id: 'treenode', icon: TreePine, label: 'Tree Node' },
+        { id: 'hashtable', icon: Hash, label: 'Hash Table' },
+        { id: 'graphnode', icon: Network, label: 'Graph Node' },
+        { id: 'linkedlist', icon: Link2, label: 'Linked List' },
+      ]
+    },
+    {
+      name: 'UML',
+      shapes: [
+        { id: 'class', icon: Box, label: 'Class' },
+        { id: 'interface', icon: Component, label: 'Interface' },
+        { id: 'package', icon: Package, label: 'Package' },
+        { id: 'actor', icon: User, label: 'Actor' },
+        { id: 'lifeline', icon: Minus, label: 'Lifeline' },
+        { id: 'activation', icon: Square, label: 'Activation' },
+      ]
+    },
+    {
+      name: 'ER Diagram',
+      shapes: [
+        { id: 'entity', icon: Square, label: 'Entity' },
+        { id: 'relationship', icon: Diamond, label: 'Relationship' },
+        { id: 'attribute', icon: Circle, label: 'Attribute' },
+        { id: 'primarykey', icon: Key, label: 'Primary Key' },
+        { id: 'foreignkey', icon: KeyRound, label: 'Foreign Key' },
+        { id: 'table', icon: Table, label: 'Table' },
+      ]
+    },
+    {
+      name: 'System Design',
+      shapes: [
+        { id: 'server', icon: Server, label: 'Server' },
+        { id: 'database', icon: Database, label: 'Database' },
+        { id: 'storage', icon: HardDrive, label: 'Storage' },
+        { id: 'internet', icon: Globe, label: 'Internet' },
+        { id: 'cloud', icon: Cloud, label: 'Cloud' },
+        { id: 'firewall', icon: Shield, label: 'Firewall' },
+        { id: 'processor', icon: Cpu, label: 'Processor' },
+        { id: 'client', icon: Monitor, label: 'Client' },
+        { id: 'mobile', icon: Smartphone, label: 'Mobile' },
+        { id: 'loadbalancer', icon: Workflow, label: 'Load Balancer' },
+        { id: 'messagequeue', icon: MessageSquare, label: 'Message Queue' },
+      ]
+    },
+    {
+      name: 'Coding/Tech',
+      shapes: [
+        { id: 'terminal', icon: Terminal, label: 'Terminal' },
+        { id: 'codeblock', icon: Code, label: 'Code Block' },
+        { id: 'jsonobject', icon: Braces, label: 'JSON/Object' },
+        { id: 'function', icon: Box, label: 'Function' },
+        { id: 'gitcommit', icon: GitCommit, label: 'Git Commit' },
+        { id: 'gitbranch', icon: GitBranch, label: 'Git Branch' },
+        { id: 'gitmerge', icon: GitMerge, label: 'Git Merge' },
+        { id: 'gitpr', icon: GitPullRequest, label: 'Git PR' },
+        { id: 'sourcefile', icon: FileCode, label: 'Source File' },
+        { id: 'bug', icon: Bug, label: 'Bug' },
+        { id: 'error', icon: XOctagon, label: 'Error' },
+        { id: 'warning', icon: AlertTriangle, label: 'Warning' },
+      ]
+    },
+    {
+      name: 'Charts',
+      shapes: [
+        { id: 'barchart', icon: BarChart3, label: 'Bar Chart' },
+        { id: 'piechart', icon: PieChart, label: 'Pie Chart' },
+        { id: 'linechart', icon: LineChart, label: 'Line Chart' },
+        { id: 'trendup', icon: TrendingUp, label: 'Trending Up' },
+        { id: 'trenddown', icon: TrendingDown, label: 'Trending Down' },
+        { id: 'activity', icon: Activity, label: 'Activity' },
+      ]
+    },
+    {
+      name: 'People & Users',
+      shapes: [
+        { id: 'user', icon: User, label: 'User' },
+        { id: 'usersgroup', icon: UsersRound, label: 'Users Group' },
+        { id: 'adduser', icon: UserPlus, label: 'Add User' },
+        { id: 'verifieduser', icon: UserCheck, label: 'Verified User' },
+        { id: 'removeuser', icon: UserX, label: 'Remove User' },
+        { id: 'organization', icon: Building, label: 'Organization' },
+        { id: 'company', icon: Building2, label: 'Company' },
+      ]
+    },
+    {
+      name: 'Status & Alerts',
+      shapes: [
+        { id: 'successcircle', icon: CheckCircle, label: 'Success' },
+        { id: 'errorcircle', icon: XCircle, label: 'Error' },
+        { id: 'alertcircle', icon: AlertCircle, label: 'Alert' },
+        { id: 'warning', icon: AlertTriangle, label: 'Warning' },
+        { id: 'info', icon: Info, label: 'Info' },
+        { id: 'help', icon: HelpCircle, label: 'Help' },
+        { id: 'notification', icon: Bell, label: 'Notification' },
+        { id: 'flag', icon: Flag, label: 'Flag' },
+      ]
+    },
+    {
+      name: 'Files & Folders',
+      shapes: [
+        { id: 'file', icon: File, label: 'File' },
+        { id: 'codefile', icon: FileCode, label: 'Code File' },
+        { id: 'textfile', icon: FileText, label: 'Text File' },
+        { id: 'folder', icon: Folder, label: 'Folder' },
+        { id: 'archive', icon: FolderArchive, label: 'Archive' },
+      ]
+    },
+    {
+      name: 'Communication',
+      shapes: [
+        { id: 'email', icon: Mail, label: 'Email' },
+        { id: 'send', icon: Send, label: 'Send' },
+        { id: 'inbox', icon: Inbox, label: 'Inbox' },
+        { id: 'chat', icon: MessageCircle, label: 'Chat' },
+        { id: 'discussion', icon: MessageSquare, label: 'Discussion' },
+        { id: 'phone', icon: Phone, label: 'Phone' },
+        { id: 'share', icon: Share2, label: 'Share' },
+      ]
+    },
+    {
+      name: 'Devices',
+      shapes: [
+        { id: 'desktop', icon: Monitor, label: 'Desktop' },
+        { id: 'mobile', icon: Smartphone, label: 'Mobile' },
+        { id: 'tablet', icon: Tablet, label: 'Tablet' },
+        { id: 'watch', icon: Watch, label: 'Watch' },
+        { id: 'tv', icon: Tv, label: 'TV' },
+        { id: 'speaker', icon: Speaker, label: 'Speaker' },
+        { id: 'headphones', icon: Headphones, label: 'Headphones' },
+        { id: 'camera', icon: Camera, label: 'Camera' },
+        { id: 'printer', icon: Printer, label: 'Printer' },
+      ]
+    },
+    {
+      name: 'Security',
+      shapes: [
+        { id: 'lock', icon: Lock, label: 'Lock' },
+        { id: 'unlock', icon: Unlock, label: 'Unlock' },
+        { id: 'key', icon: Key, label: 'Key' },
+        { id: 'apikey', icon: KeyRound, label: 'API Key' },
+        { id: 'shield', icon: Shield, label: 'Shield' },
+        { id: 'secured', icon: ShieldCheck, label: 'Secured' },
+        { id: 'vulnerable', icon: ShieldAlert, label: 'Vulnerable' },
+        { id: 'biometric', icon: Fingerprint, label: 'Biometric' },
+        { id: 'visible', icon: Eye, label: 'Visible' },
+        { id: 'hidden', icon: EyeOff, label: 'Hidden' },
+      ]
+    },
+    {
+      name: 'Actions',
+      shapes: [
+        { id: 'add', icon: Plus, label: 'Add' },
+        { id: 'remove', icon: Minus, label: 'Remove' },
+        { id: 'check', icon: Check, label: 'Check' },
+        { id: 'close', icon: X, label: 'Close' },
+        { id: 'refresh', icon: RefreshCw, label: 'Refresh' },
+        { id: 'rotate', icon: RotateCw, label: 'Rotate' },
+        { id: 'download', icon: Download, label: 'Download' },
+        { id: 'upload', icon: Upload, label: 'Upload' },
+        { id: 'search', icon: Search, label: 'Search' },
+        { id: 'settings', icon: Settings, label: 'Settings' },
+      ]
+    },
+    {
+      name: 'Misc',
+      shapes: [
+        { id: 'idea', icon: Lightbulb, label: 'Idea' },
+        { id: 'target', icon: Target, label: 'Target' },
+        { id: 'focus', icon: Crosshair, label: 'Focus' },
+        { id: 'bookmark', icon: Bookmark, label: 'Bookmark' },
+        { id: 'tag', icon: Tag, label: 'Tag' },
+        { id: 'award', icon: Award, label: 'Award' },
+        { id: 'trophy', icon: Trophy, label: 'Trophy' },
+        { id: 'lightning', icon: Zap, label: 'Lightning' },
+        { id: 'fire', icon: Flame, label: 'Fire' },
+        { id: 'puzzle', icon: Puzzle, label: 'Puzzle' },
+        { id: 'compass', icon: Compass, label: 'Compass' },
+      ]
+    },
+  ];
+
   const colors = [
     '#000000', '#FF0000', '#00FF00', '#0066FF', '#FFA500',
     '#FF69B4', '#00CED1', '#9400D3', '#FFD700', '#FFFFFF'
   ];
 
   const backgroundColors = [
-    '#FFFFFF', '#FFE4E1', '#E8F5E9', '#E3F2FD', '#FFF9C4', '#F3E5F5', '#E0E0E0'
+    '#FFFFFF', '#FFE4E1', '#E8F5E9', '#E3F2FD', '#FFF9C4', '#F3E5F5', '#E0E0E0',
+    '#1a1a2e', '#16213e', '#0f0f23'
   ];
+
+  const darkBackgrounds = ['#1a1a2e', '#16213e', '#0f0f23'];
 
   const strokeWidths = [
     { label: 'S', value: 2 },
@@ -221,20 +546,318 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     ctx.globalAlpha = 1;
   }, []);
 
+  // Map tool IDs to Lucide icon components for exact icon rendering
+  const toolIconMap: Record<string, any> = {
+    // Arrows
+    'arrow': ArrowRight,
+    'arrowup': ArrowUp,
+    'arrowdown': ArrowDown,
+    'arrowleft': MoveLeft,
+    'diagonalur': ArrowUpRight,
+    'diagonaldr': ArrowDownRight,
+    'diagonalul': ArrowUpLeft,
+    'diagonaldl': ArrowDownLeft,
+    'cornerur': CornerUpRight,
+    'cornerdr': CornerDownRight,
+    'bidirectional': ArrowLeftRight,
+    // System Design
+    'server': Server,
+    'storage': HardDrive,
+    'firewall': Shield,
+    'processor': Cpu,
+    'client': Monitor,
+    'desktop': Monitor,
+    'mobile': Smartphone,
+    'loadbalancer': Workflow,
+    'messagequeue': MessageSquare,
+    'internet': Globe,
+    'layers': Layers,
+    // Coding/Tech
+    'terminal': Terminal,
+    'codeblock': Code,
+    'jsonobject': Braces,
+    'function': Box,
+    'gitcommit': GitCommit,
+    'gitbranch': GitBranch,
+    'gitmerge': GitMerge,
+    'gitpr': GitPullRequest,
+    'sourcefile': FileCode,
+    'codefile': FileCode,
+    'bug': Bug,
+    'error': XOctagon,
+    'warning': AlertTriangle,
+    // Files & Folders
+    'file': File,
+    'textfile': FileText,
+    'folder': Folder,
+    'archive': FolderArchive,
+    // Communication
+    'email': Mail,
+    'send': Send,
+    'inbox': Inbox,
+    'chat': MessageCircle,
+    'discussion': MessageSquare,
+    'phone': Phone,
+    'share': Share2,
+    // Devices
+    'tablet': Tablet,
+    'watch': Watch,
+    'tv': Tv,
+    'speaker': Speaker,
+    'headphones': Headphones,
+    'camera': Camera,
+    'printer': Printer,
+    // Security
+    'lock': Lock,
+    'unlock': Unlock,
+    'key': Key,
+    'apikey': KeyRound,
+    'shield': Shield,
+    'secured': ShieldCheck,
+    'vulnerable': ShieldAlert,
+    'biometric': Fingerprint,
+    'visible': Eye,
+    'hidden': EyeOff,
+    // People
+    'user': User,
+    'actor': User,
+    'usersgroup': UsersRound,
+    'adduser': UserPlus,
+    'verifieduser': UserCheck,
+    'removeuser': UserX,
+    'organization': Building,
+    'company': Building2,
+    // Status
+    'successcircle': CheckCircle,
+    'errorcircle': XCircle,
+    'alertcircle': AlertCircle,
+    'info': Info,
+    'help': HelpCircle,
+    'notification': Bell,
+    'flag': Flag,
+    // Actions
+    'add': Plus,
+    'remove': Minus,
+    'check': Check,
+    'close': X,
+    'refresh': RefreshCw,
+    'rotate': RotateCw,
+    'download': Download,
+    'upload': Upload,
+    'search': Search,
+    'settings': Settings,
+    // Charts
+    'barchart': BarChart3,
+    'piechart': PieChart,
+    'linechart': LineChart,
+    'trendup': TrendingUp,
+    'trenddown': TrendingDown,
+    'activity': Activity,
+    // Misc
+    'idea': Lightbulb,
+    'target': Target,
+    'focus': Crosshair,
+    'bookmark': Bookmark,
+    'tag': Tag,
+    'award': Award,
+    'trophy': Trophy,
+    'lightning': Zap,
+    'fire': Flame,
+    'puzzle': Puzzle,
+    'compass': Compass,
+    // Data Structures
+    'array': Table,
+    'stack': List,
+    'queue': ListOrdered,
+    'node': CircleDot,
+    'pointer': ArrowRight,
+    'treenode': TreePine,
+    'hashtable': Hash,
+    'graphnode': Network,
+    'linkedlist': Link2,
+    // UML
+    'class': Box,
+    'interface': Component,
+    'package': Package,
+    'lifeline': Minus,
+    'activation': Square,
+    // ER
+    'entity': Square,
+    'relationship': Diamond,
+    'attribute': Circle,
+    'primarykey': Key,
+    'foreignkey': KeyRound,
+    'table': Table,
+    // Flowchart
+    'callout': MessageSquare,
+    'document': FileText,
+    'database': Database,
+    'cylinder': Database,
+    'cloud': Cloud,
+    // General
+    'rectangle': Square,
+    'circle': Circle,
+    'triangle': Triangle,
+    'diamond': Diamond,
+    'hexagon': Hexagon,
+    'star': Star,
+    'heart': Heart,
+    'pentagon': Pentagon,
+    'octagon': Octagon,
+  };
+
+  // Render Lucide icon to canvas - exact copy of sidebar icon
+  const renderIconToCanvas = useCallback((
+    ctx: CanvasRenderingContext2D,
+    IconComponent: any,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    strokeColor: string,
+    fillColor: string | null,
+    strokeWidth: number,
+    opacity: number
+  ) => {
+    return new Promise<void>((resolve) => {
+      const size = Math.min(Math.abs(width), Math.abs(height));
+      const actualX = width < 0 ? x + width : x;
+      const actualY = height < 0 ? y + height : y;
+      
+      // Create SVG string from Lucide icon
+      const svgString = renderToStaticMarkup(
+        createElement(IconComponent, {
+          size: size,
+          stroke: strokeColor,
+          strokeWidth: strokeWidth,
+          fill: fillColor || 'none',
+        })
+      );
+      
+      // Create a blob URL from the SVG
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      
+      const img = new Image();
+      img.onload = () => {
+        ctx.globalAlpha = opacity / 100;
+        ctx.drawImage(img, actualX, actualY, Math.abs(width), Math.abs(height));
+        ctx.globalAlpha = 1;
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+      img.src = url;
+    });
+  }, []);
+
+  // Synchronous version for preview - draws placeholder then updates
+  const renderIconToCanvasSync = useCallback((
+    ctx: CanvasRenderingContext2D,
+    toolType: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    strokeColor: string,
+    fillColor: string | null,
+    strokeWidth: number,
+    opacity: number
+  ) => {
+    const IconComponent = toolIconMap[toolType];
+    if (!IconComponent) return;
+    
+    const size = Math.min(Math.abs(width), Math.abs(height));
+    const actualX = width < 0 ? x + width : x;
+    const actualY = height < 0 ? y + height : y;
+    const cacheKey = `${toolType}-${strokeColor}-${fillColor}-${strokeWidth}`;
+    
+    // Check cache first
+    const cachedImg = iconImageCache.current.get(cacheKey);
+    if (cachedImg && cachedImg.complete) {
+      ctx.globalAlpha = opacity / 100;
+      ctx.drawImage(cachedImg, actualX, actualY, Math.abs(width), Math.abs(height));
+      ctx.globalAlpha = 1;
+      return;
+    }
+    
+    // Create and cache the image
+    const svgString = renderToStaticMarkup(
+      createElement(IconComponent, {
+        size: 48,
+        stroke: strokeColor,
+        strokeWidth: strokeWidth,
+        fill: fillColor || 'none',
+      })
+    );
+    
+    const blob = new Blob([svgString], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    
+    const img = new Image();
+    img.onload = () => {
+      iconImageCache.current.set(cacheKey, img);
+      ctx.globalAlpha = opacity / 100;
+      ctx.drawImage(img, actualX, actualY, Math.abs(width), Math.abs(height));
+      ctx.globalAlpha = 1;
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+    
+    // Draw temporary bounding box while loading
+    ctx.globalAlpha = opacity / 100;
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(actualX, actualY, Math.abs(width), Math.abs(height));
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }, []);
+
   // Draw shape on canvas
   const drawShape = useCallback((ctx: CanvasRenderingContext2D, shape: ShapeData) => {
     const { type, startX, startY, endX, endY, color: shapeColor, lineWidth: shapeWidth, strokeStyle: shapeStroke, opacity: shapeOpacity, fill: shapeFill, fillColor } = shape;
-
-    ctx.beginPath();
-    ctx.strokeStyle = shapeColor;
-    ctx.lineWidth = shapeWidth;
-    ctx.globalAlpha = shapeOpacity / 100;
-    setContextStrokeStyle(ctx, shapeStroke);
 
     const width = endX - startX;
     const height = endY - startY;
     const centerX = startX + width / 2;
     const centerY = startY + height / 2;
+
+    ctx.globalAlpha = shapeOpacity / 100;
+
+    // Basic geometric shapes that should use precise canvas drawing instead of icons
+    const basicGeometricShapes = [
+      'rectangle', 'circle', 'triangle', 'diamond', 'hexagon', 'pentagon', 
+      'star', 'line', 'arrow', 'parallelogram', 'rounded-rectangle'
+    ];
+
+    // Use exact Lucide icon rendering for icon-based shapes (excluding basic geometry)
+    if (toolIconMap[type] && !basicGeometricShapes.includes(type)) {
+      renderIconToCanvasSync(
+        ctx, 
+        type, 
+        startX, 
+        startY, 
+        Math.abs(width), 
+        Math.abs(height), 
+        shapeColor, 
+        shapeFill ? (fillColor || shapeColor) : null, 
+        shapeWidth, 
+        shapeOpacity
+      );
+      ctx.globalAlpha = 1;
+      ctx.setLineDash([]);
+      return;
+    }
+
+    // Fallback to manual drawing for basic geometric shapes
+    ctx.beginPath();
+    ctx.strokeStyle = shapeColor;
+    ctx.lineWidth = shapeWidth;
+    setContextStrokeStyle(ctx, shapeStroke);
 
     switch (type) {
       case 'rectangle':
@@ -322,11 +945,2542 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
         ctx.stroke();
         break;
       }
+      case 'diamond': {
+        ctx.moveTo(centerX, startY);
+        ctx.lineTo(endX, centerY);
+        ctx.lineTo(centerX, endY);
+        ctx.lineTo(startX, centerY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'hexagon': {
+        const size = Math.min(Math.abs(width), Math.abs(height)) / 2;
+        for (let i = 0; i < 6; i++) {
+          const angleDeg = 60 * i - 30;
+          const angleRad = (Math.PI / 180) * angleDeg;
+          const px = centerX + size * Math.cos(angleRad);
+          const py = centerY + size * Math.sin(angleRad);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'parallelogram': {
+        const offset = width * 0.2;
+        ctx.moveTo(startX + offset, startY);
+        ctx.lineTo(endX, startY);
+        ctx.lineTo(endX - offset, endY);
+        ctx.lineTo(startX, endY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'cylinder': {
+        const ellipseHeight = Math.abs(height) * 0.15;
+        // Top ellipse
+        ctx.ellipse(centerX, startY + ellipseHeight, Math.abs(width) / 2, ellipseHeight, 0, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Body
+        ctx.beginPath();
+        ctx.moveTo(startX, startY + ellipseHeight);
+        ctx.lineTo(startX, endY - ellipseHeight);
+        ctx.ellipse(centerX, endY - ellipseHeight, Math.abs(width) / 2, ellipseHeight, 0, Math.PI, 0, true);
+        ctx.lineTo(endX, startY + ellipseHeight);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'cloud': {
+        const w = Math.abs(width);
+        const h = Math.abs(height);
+        ctx.moveTo(startX + w * 0.25, startY + h * 0.5);
+        ctx.bezierCurveTo(startX, startY + h * 0.5, startX, startY, startX + w * 0.35, startY + h * 0.15);
+        ctx.bezierCurveTo(startX + w * 0.35, startY - h * 0.1, startX + w * 0.65, startY - h * 0.1, startX + w * 0.65, startY + h * 0.15);
+        ctx.bezierCurveTo(startX + w, startY, startX + w, startY + h * 0.5, startX + w * 0.75, startY + h * 0.5);
+        ctx.bezierCurveTo(startX + w, startY + h * 0.7, startX + w * 0.8, startY + h, startX + w * 0.5, startY + h * 0.85);
+        ctx.bezierCurveTo(startX + w * 0.2, startY + h, startX, startY + h * 0.7, startX + w * 0.25, startY + h * 0.5);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'pentagon': {
+        const size = Math.min(Math.abs(width), Math.abs(height)) / 2;
+        for (let i = 0; i < 5; i++) {
+          const angleDeg = 72 * i - 90;
+          const angleRad = (Math.PI / 180) * angleDeg;
+          const px = centerX + size * Math.cos(angleRad);
+          const py = centerY + size * Math.sin(angleRad);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'octagon': {
+        const size = Math.min(Math.abs(width), Math.abs(height)) / 2;
+        for (let i = 0; i < 8; i++) {
+          const angleDeg = 45 * i - 22.5;
+          const angleRad = (Math.PI / 180) * angleDeg;
+          const px = centerX + size * Math.cos(angleRad);
+          const py = centerY + size * Math.sin(angleRad);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'callout': {
+        // Speech bubble callout shape
+        const tailSize = height * 0.2;
+        ctx.moveTo(startX + 10, startY);
+        ctx.lineTo(endX - 10, startY);
+        ctx.quadraticCurveTo(endX, startY, endX, startY + 10);
+        ctx.lineTo(endX, endY - tailSize - 10);
+        ctx.quadraticCurveTo(endX, endY - tailSize, endX - 10, endY - tailSize);
+        ctx.lineTo(startX + width * 0.3, endY - tailSize);
+        ctx.lineTo(startX + width * 0.2, endY);
+        ctx.lineTo(startX + width * 0.15, endY - tailSize);
+        ctx.lineTo(startX + 10, endY - tailSize);
+        ctx.quadraticCurveTo(startX, endY - tailSize, startX, endY - tailSize - 10);
+        ctx.lineTo(startX, startY + 10);
+        ctx.quadraticCurveTo(startX, startY, startX + 10, startY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'document': {
+        // Document with wavy bottom
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, startY);
+        ctx.lineTo(endX, endY - height * 0.1);
+        // Wavy bottom
+        ctx.bezierCurveTo(
+          endX - width * 0.25, endY - height * 0.2,
+          startX + width * 0.25, endY + height * 0.1,
+          startX, endY - height * 0.1
+        );
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'database':
+      case 'process':
+      case 'decision':
+      case 'connector': {
+        // Same as cylinder for database-like shapes
+        const ellipseH = Math.abs(height) * 0.15;
+        ctx.ellipse(centerX, startY + ellipseH, Math.abs(width) / 2, ellipseH, 0, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(startX, startY + ellipseH);
+        ctx.lineTo(startX, endY - ellipseH);
+        ctx.ellipse(centerX, endY - ellipseH, Math.abs(width) / 2, ellipseH, 0, Math.PI, 0, true);
+        ctx.lineTo(endX, startY + ellipseH);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      // ===== ARROW SHAPES =====
+      case 'bidirectional': {
+        const headLen = 15;
+        const angle1 = Math.atan2(endY - startY, endX - startX);
+        const angle2 = Math.atan2(startY - endY, startX - endX);
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        // Arrow head at end
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - headLen * Math.cos(angle1 - Math.PI / 6), endY - headLen * Math.sin(angle1 - Math.PI / 6));
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - headLen * Math.cos(angle1 + Math.PI / 6), endY - headLen * Math.sin(angle1 + Math.PI / 6));
+        ctx.stroke();
+        // Arrow head at start
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(startX - headLen * Math.cos(angle2 - Math.PI / 6), startY - headLen * Math.sin(angle2 - Math.PI / 6));
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(startX - headLen * Math.cos(angle2 + Math.PI / 6), startY - headLen * Math.sin(angle2 + Math.PI / 6));
+        ctx.stroke();
+        break;
+      }
+      case 'arrowup': {
+        const headLen = 15;
+        ctx.moveTo(centerX, endY);
+        ctx.lineTo(centerX, startY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(centerX, startY);
+        ctx.lineTo(centerX - headLen, startY + headLen);
+        ctx.moveTo(centerX, startY);
+        ctx.lineTo(centerX + headLen, startY + headLen);
+        ctx.stroke();
+        break;
+      }
+      case 'arrowdown': {
+        const headLen = 15;
+        ctx.moveTo(centerX, startY);
+        ctx.lineTo(centerX, endY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(centerX, endY);
+        ctx.lineTo(centerX - headLen, endY - headLen);
+        ctx.moveTo(centerX, endY);
+        ctx.lineTo(centerX + headLen, endY - headLen);
+        ctx.stroke();
+        break;
+      }
+      case 'arrowleft': {
+        const headLen = 15;
+        ctx.moveTo(endX, centerY);
+        ctx.lineTo(startX, centerY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(startX, centerY);
+        ctx.lineTo(startX + headLen, centerY - headLen);
+        ctx.moveTo(startX, centerY);
+        ctx.lineTo(startX + headLen, centerY + headLen);
+        ctx.stroke();
+        break;
+      }
+      case 'diagonalur': {
+        const headLen = 15;
+        ctx.moveTo(startX, endY);
+        ctx.lineTo(endX, startY);
+        ctx.stroke();
+        const angle = Math.atan2(startY - endY, endX - startX);
+        ctx.beginPath();
+        ctx.moveTo(endX, startY);
+        ctx.lineTo(endX - headLen * Math.cos(angle - Math.PI / 6), startY + headLen * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(endX, startY);
+        ctx.lineTo(endX - headLen * Math.cos(angle + Math.PI / 6), startY + headLen * Math.sin(angle + Math.PI / 6));
+        ctx.stroke();
+        break;
+      }
+      case 'diagonaldr': {
+        const headLen = 15;
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        const angle = Math.atan2(endY - startY, endX - startX);
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - headLen * Math.cos(angle - Math.PI / 6), endY - headLen * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - headLen * Math.cos(angle + Math.PI / 6), endY - headLen * Math.sin(angle + Math.PI / 6));
+        ctx.stroke();
+        break;
+      }
+      case 'diagonalul': {
+        const headLen = 15;
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(startX, startY);
+        ctx.stroke();
+        const angle = Math.atan2(startY - endY, startX - endX);
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(startX - headLen * Math.cos(angle - Math.PI / 6), startY - headLen * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(startX - headLen * Math.cos(angle + Math.PI / 6), startY - headLen * Math.sin(angle + Math.PI / 6));
+        ctx.stroke();
+        break;
+      }
+      case 'diagonaldl': {
+        const headLen = 15;
+        ctx.moveTo(endX, startY);
+        ctx.lineTo(startX, endY);
+        ctx.stroke();
+        const angle = Math.atan2(endY - startY, startX - endX);
+        ctx.beginPath();
+        ctx.moveTo(startX, endY);
+        ctx.lineTo(startX - headLen * Math.cos(angle - Math.PI / 6), endY - headLen * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(startX, endY);
+        ctx.lineTo(startX - headLen * Math.cos(angle + Math.PI / 6), endY - headLen * Math.sin(angle + Math.PI / 6));
+        ctx.stroke();
+        break;
+      }
+      case 'cornerur': {
+        const headLen = 12;
+        ctx.moveTo(startX, endY);
+        ctx.lineTo(startX, startY);
+        ctx.lineTo(endX, startY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(endX, startY);
+        ctx.lineTo(endX - headLen, startY - headLen / 2);
+        ctx.moveTo(endX, startY);
+        ctx.lineTo(endX - headLen, startY + headLen / 2);
+        ctx.stroke();
+        break;
+      }
+      case 'cornerdr': {
+        const headLen = 12;
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(startX, endY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - headLen, endY - headLen / 2);
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - headLen, endY + headLen / 2);
+        ctx.stroke();
+        break;
+      }
+      // ===== SERVER & SYSTEM DESIGN =====
+      case 'server': {
+        // Server rack shape
+        const slotHeight = height / 4;
+        // Main body
+        ctx.strokeRect(startX, startY, width, height);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, height);
+        }
+        // Horizontal slots
+        for (let i = 1; i < 4; i++) {
+          ctx.beginPath();
+          ctx.moveTo(startX, startY + slotHeight * i);
+          ctx.lineTo(endX, startY + slotHeight * i);
+          ctx.stroke();
+        }
+        // LED indicators
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.arc(endX - 10, startY + slotHeight * i + slotHeight / 2, 3, 0, 2 * Math.PI);
+          ctx.fillStyle = '#00ff00';
+          ctx.fill();
+        }
+        break;
+      }
+      case 'storage': {
+        // Hard drive shape
+        const cornerR = 8;
+        ctx.beginPath();
+        ctx.moveTo(startX + cornerR, startY);
+        ctx.lineTo(endX - cornerR, startY);
+        ctx.quadraticCurveTo(endX, startY, endX, startY + cornerR);
+        ctx.lineTo(endX, endY - cornerR);
+        ctx.quadraticCurveTo(endX, endY, endX - cornerR, endY);
+        ctx.lineTo(startX + cornerR, endY);
+        ctx.quadraticCurveTo(startX, endY, startX, endY - cornerR);
+        ctx.lineTo(startX, startY + cornerR);
+        ctx.quadraticCurveTo(startX, startY, startX + cornerR, startY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Disk circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, Math.min(width, height) * 0.3, 0, 2 * Math.PI);
+        ctx.stroke();
+        // Center hole
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, Math.min(width, height) * 0.1, 0, 2 * Math.PI);
+        ctx.stroke();
+        break;
+      }
+      case 'firewall': {
+        // Shield with lines
+        const shieldH = height * 0.9;
+        ctx.moveTo(centerX, startY);
+        ctx.quadraticCurveTo(endX, startY, endX, startY + shieldH * 0.3);
+        ctx.quadraticCurveTo(endX, startY + shieldH * 0.8, centerX, endY);
+        ctx.quadraticCurveTo(startX, startY + shieldH * 0.8, startX, startY + shieldH * 0.3);
+        ctx.quadraticCurveTo(startX, startY, centerX, startY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Brick pattern
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.2, startY + height * 0.3);
+        ctx.lineTo(endX - width * 0.2, startY + height * 0.3);
+        ctx.moveTo(startX + width * 0.2, startY + height * 0.5);
+        ctx.lineTo(endX - width * 0.2, startY + height * 0.5);
+        ctx.stroke();
+        break;
+      }
+      case 'processor': {
+        // CPU chip shape
+        const padding = Math.min(width, height) * 0.15;
+        ctx.strokeRect(startX + padding, startY + padding, width - padding * 2, height - padding * 2);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX + padding, startY + padding, width - padding * 2, height - padding * 2);
+        }
+        // Pins
+        const pinCount = 4;
+        const pinLen = padding * 0.8;
+        for (let i = 0; i < pinCount; i++) {
+          const pos = (i + 0.5) * (width - padding * 2) / pinCount + startX + padding;
+          // Top pins
+          ctx.beginPath();
+          ctx.moveTo(pos, startY + padding);
+          ctx.lineTo(pos, startY + padding - pinLen);
+          ctx.stroke();
+          // Bottom pins
+          ctx.beginPath();
+          ctx.moveTo(pos, endY - padding);
+          ctx.lineTo(pos, endY - padding + pinLen);
+          ctx.stroke();
+        }
+        for (let i = 0; i < pinCount; i++) {
+          const pos = (i + 0.5) * (height - padding * 2) / pinCount + startY + padding;
+          // Left pins
+          ctx.beginPath();
+          ctx.moveTo(startX + padding, pos);
+          ctx.lineTo(startX + padding - pinLen, pos);
+          ctx.stroke();
+          // Right pins
+          ctx.beginPath();
+          ctx.moveTo(endX - padding, pos);
+          ctx.lineTo(endX - padding + pinLen, pos);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'client':
+      case 'desktop': {
+        // Monitor shape
+        const screenH = height * 0.7;
+        const standH = height * 0.15;
+        const baseH = height * 0.15;
+        // Screen
+        ctx.strokeRect(startX, startY, width, screenH);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, screenH);
+        }
+        // Stand
+        ctx.beginPath();
+        ctx.moveTo(centerX - width * 0.1, startY + screenH);
+        ctx.lineTo(centerX - width * 0.1, startY + screenH + standH);
+        ctx.lineTo(centerX + width * 0.1, startY + screenH + standH);
+        ctx.lineTo(centerX + width * 0.1, startY + screenH);
+        ctx.stroke();
+        // Base
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.2, endY - baseH);
+        ctx.lineTo(endX - width * 0.2, endY - baseH);
+        ctx.lineTo(endX - width * 0.15, endY);
+        ctx.lineTo(startX + width * 0.15, endY);
+        ctx.closePath();
+        ctx.stroke();
+        break;
+      }
+      case 'mobile': {
+        // Smartphone shape
+        const cornerR = Math.min(width, height) * 0.1;
+        ctx.beginPath();
+        ctx.moveTo(startX + cornerR, startY);
+        ctx.lineTo(endX - cornerR, startY);
+        ctx.quadraticCurveTo(endX, startY, endX, startY + cornerR);
+        ctx.lineTo(endX, endY - cornerR);
+        ctx.quadraticCurveTo(endX, endY, endX - cornerR, endY);
+        ctx.lineTo(startX + cornerR, endY);
+        ctx.quadraticCurveTo(startX, endY, startX, endY - cornerR);
+        ctx.lineTo(startX, startY + cornerR);
+        ctx.quadraticCurveTo(startX, startY, startX + cornerR, startY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Screen
+        ctx.strokeRect(startX + width * 0.1, startY + height * 0.1, width * 0.8, height * 0.75);
+        // Home button
+        ctx.beginPath();
+        ctx.arc(centerX, endY - height * 0.07, Math.min(width, height) * 0.05, 0, 2 * Math.PI);
+        ctx.stroke();
+        break;
+      }
+      case 'loadbalancer': {
+        // Load balancer - box with arrows
+        ctx.strokeRect(startX, startY, width, height);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, height);
+        }
+        // Incoming arrow
+        ctx.beginPath();
+        ctx.moveTo(startX - 10, centerY);
+        ctx.lineTo(startX + width * 0.2, centerY);
+        ctx.stroke();
+        // Outgoing arrows
+        ctx.beginPath();
+        ctx.moveTo(endX - width * 0.2, startY + height * 0.25);
+        ctx.lineTo(endX + 10, startY + height * 0.25);
+        ctx.moveTo(endX - width * 0.2, centerY);
+        ctx.lineTo(endX + 10, centerY);
+        ctx.moveTo(endX - width * 0.2, endY - height * 0.25);
+        ctx.lineTo(endX + 10, endY - height * 0.25);
+        ctx.stroke();
+        break;
+      }
+      case 'messagequeue': {
+        // Queue shape - stacked rectangles
+        const boxH = height / 3;
+        for (let i = 0; i < 3; i++) {
+          ctx.strokeRect(startX + i * 3, startY + boxH * i + i * 2, width - i * 6, boxH - 4);
+          if (shapeFill) {
+            ctx.fillStyle = fillColor || shapeColor;
+            ctx.fillRect(startX + i * 3, startY + boxH * i + i * 2, width - i * 6, boxH - 4);
+          }
+        }
+        break;
+      }
+      // ===== CODING/TECH SHAPES =====
+      case 'terminal': {
+        // Terminal window
+        const titleH = height * 0.15;
+        ctx.strokeRect(startX, startY, width, height);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, height);
+        }
+        // Title bar
+        ctx.beginPath();
+        ctx.moveTo(startX, startY + titleH);
+        ctx.lineTo(endX, startY + titleH);
+        ctx.stroke();
+        // Prompt >_
+        ctx.font = `${Math.min(width, height) * 0.25}px monospace`;
+        ctx.fillStyle = shapeColor;
+        ctx.fillText('>_', startX + width * 0.1, startY + titleH + height * 0.4);
+        break;
+      }
+      case 'codeblock': {
+        // Code block with brackets
+        ctx.strokeRect(startX, startY, width, height);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, height);
+        }
+        // Code lines
+        const lineH = height * 0.15;
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.1, startY + lineH);
+        ctx.lineTo(startX + width * 0.6, startY + lineH);
+        ctx.moveTo(startX + width * 0.15, startY + lineH * 2);
+        ctx.lineTo(startX + width * 0.7, startY + lineH * 2);
+        ctx.moveTo(startX + width * 0.15, startY + lineH * 3);
+        ctx.lineTo(startX + width * 0.5, startY + lineH * 3);
+        ctx.moveTo(startX + width * 0.1, startY + lineH * 4);
+        ctx.lineTo(startX + width * 0.8, startY + lineH * 4);
+        ctx.stroke();
+        break;
+      }
+      case 'jsonobject': {
+        // JSON braces shape
+        const braceW = width * 0.2;
+        // Left brace {
+        ctx.beginPath();
+        ctx.moveTo(startX + braceW, startY);
+        ctx.quadraticCurveTo(startX, startY, startX, startY + height * 0.25);
+        ctx.lineTo(startX, centerY - height * 0.1);
+        ctx.quadraticCurveTo(startX - braceW * 0.3, centerY, startX, centerY + height * 0.1);
+        ctx.lineTo(startX, endY - height * 0.25);
+        ctx.quadraticCurveTo(startX, endY, startX + braceW, endY);
+        ctx.stroke();
+        // Right brace }
+        ctx.beginPath();
+        ctx.moveTo(endX - braceW, startY);
+        ctx.quadraticCurveTo(endX, startY, endX, startY + height * 0.25);
+        ctx.lineTo(endX, centerY - height * 0.1);
+        ctx.quadraticCurveTo(endX + braceW * 0.3, centerY, endX, centerY + height * 0.1);
+        ctx.lineTo(endX, endY - height * 0.25);
+        ctx.quadraticCurveTo(endX, endY, endX - braceW, endY);
+        ctx.stroke();
+        break;
+      }
+      case 'function': {
+        // Function box with f(x)
+        const cornerR = 8;
+        ctx.beginPath();
+        ctx.moveTo(startX + cornerR, startY);
+        ctx.lineTo(endX - cornerR, startY);
+        ctx.quadraticCurveTo(endX, startY, endX, startY + cornerR);
+        ctx.lineTo(endX, endY - cornerR);
+        ctx.quadraticCurveTo(endX, endY, endX - cornerR, endY);
+        ctx.lineTo(startX + cornerR, endY);
+        ctx.quadraticCurveTo(startX, endY, startX, endY - cornerR);
+        ctx.lineTo(startX, startY + cornerR);
+        ctx.quadraticCurveTo(startX, startY, startX + cornerR, startY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // f(x) text
+        ctx.font = `${Math.min(width, height) * 0.3}px serif`;
+        ctx.fillStyle = shapeColor;
+        ctx.textAlign = 'center';
+        ctx.fillText('f(x)', centerX, centerY + height * 0.1);
+        ctx.textAlign = 'left';
+        break;
+      }
+      case 'gitcommit': {
+        // Git commit - circle with dot
+        const radius = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Center dot
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.3, 0, 2 * Math.PI);
+        ctx.fillStyle = shapeColor;
+        ctx.fill();
+        break;
+      }
+      case 'gitbranch': {
+        // Git branch - line with branches
+        ctx.beginPath();
+        ctx.moveTo(centerX, endY);
+        ctx.lineTo(centerX, startY + height * 0.3);
+        ctx.stroke();
+        // Main branch dot
+        ctx.beginPath();
+        ctx.arc(centerX, endY - height * 0.1, 5, 0, 2 * Math.PI);
+        ctx.fill();
+        // Branch line
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.quadraticCurveTo(centerX + width * 0.3, centerY - height * 0.1, endX - width * 0.2, startY + height * 0.3);
+        ctx.stroke();
+        // Branch dot
+        ctx.beginPath();
+        ctx.arc(endX - width * 0.2, startY + height * 0.3, 5, 0, 2 * Math.PI);
+        ctx.fill();
+        // Top dot
+        ctx.beginPath();
+        ctx.arc(centerX, startY + height * 0.2, 5, 0, 2 * Math.PI);
+        ctx.fill();
+        break;
+      }
+      case 'gitmerge': {
+        // Git merge - converging lines
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.2, startY);
+        ctx.lineTo(centerX, centerY);
+        ctx.lineTo(centerX, endY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(endX - width * 0.2, startY);
+        ctx.lineTo(centerX, centerY);
+        ctx.stroke();
+        // Dots
+        ctx.beginPath();
+        ctx.arc(startX + width * 0.2, startY + 5, 5, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(endX - width * 0.2, startY + 5, 5, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(centerX, endY - 5, 5, 0, 2 * Math.PI);
+        ctx.fill();
+        break;
+      }
+      case 'gitpr': {
+        // Git PR - two branches with arrow
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.3, startY);
+        ctx.lineTo(startX + width * 0.3, endY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(endX - width * 0.3, startY);
+        ctx.lineTo(endX - width * 0.3, endY);
+        ctx.stroke();
+        // Curved arrow
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.3, centerY);
+        ctx.quadraticCurveTo(centerX, centerY - height * 0.2, endX - width * 0.3, centerY);
+        ctx.stroke();
+        // Arrow head
+        ctx.beginPath();
+        ctx.moveTo(endX - width * 0.3, centerY);
+        ctx.lineTo(endX - width * 0.4, centerY - 8);
+        ctx.moveTo(endX - width * 0.3, centerY);
+        ctx.lineTo(endX - width * 0.4, centerY + 8);
+        ctx.stroke();
+        break;
+      }
+      case 'sourcefile':
+      case 'codefile': {
+        // Source file with folded corner
+        const fold = Math.min(width, height) * 0.2;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX - fold, startY);
+        ctx.lineTo(endX, startY + fold);
+        ctx.lineTo(endX, endY);
+        ctx.lineTo(startX, endY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Fold
+        ctx.beginPath();
+        ctx.moveTo(endX - fold, startY);
+        ctx.lineTo(endX - fold, startY + fold);
+        ctx.lineTo(endX, startY + fold);
+        ctx.stroke();
+        // Code brackets
+        ctx.font = `${Math.min(width, height) * 0.25}px monospace`;
+        ctx.fillStyle = shapeColor;
+        ctx.textAlign = 'center';
+        ctx.fillText('</>', centerX, centerY + height * 0.15);
+        ctx.textAlign = 'left';
+        break;
+      }
+      case 'bug': {
+        // Bug icon - oval with legs
+        const bugW = width * 0.6;
+        const bugH = height * 0.5;
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, bugW / 2, bugH / 2, 0, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Legs
+        ctx.beginPath();
+        // Left legs
+        ctx.moveTo(centerX - bugW / 2, centerY - bugH * 0.2);
+        ctx.lineTo(startX, startY + height * 0.2);
+        ctx.moveTo(centerX - bugW / 2, centerY);
+        ctx.lineTo(startX, centerY);
+        ctx.moveTo(centerX - bugW / 2, centerY + bugH * 0.2);
+        ctx.lineTo(startX, endY - height * 0.2);
+        // Right legs
+        ctx.moveTo(centerX + bugW / 2, centerY - bugH * 0.2);
+        ctx.lineTo(endX, startY + height * 0.2);
+        ctx.moveTo(centerX + bugW / 2, centerY);
+        ctx.lineTo(endX, centerY);
+        ctx.moveTo(centerX + bugW / 2, centerY + bugH * 0.2);
+        ctx.lineTo(endX, endY - height * 0.2);
+        ctx.stroke();
+        // Antennae
+        ctx.beginPath();
+        ctx.moveTo(centerX - bugW * 0.2, centerY - bugH / 2);
+        ctx.lineTo(centerX - bugW * 0.3, startY);
+        ctx.moveTo(centerX + bugW * 0.2, centerY - bugH / 2);
+        ctx.lineTo(centerX + bugW * 0.3, startY);
+        ctx.stroke();
+        break;
+      }
+      case 'error': {
+        // Octagon stop sign
+        const sz = Math.min(width, height) * 0.45;
+        for (let i = 0; i < 8; i++) {
+          const angleDeg = 45 * i - 22.5;
+          const angleRad = (Math.PI / 180) * angleDeg;
+          const px = centerX + sz * Math.cos(angleRad);
+          const py = centerY + sz * Math.sin(angleRad);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || '#ff4444';
+          ctx.fill();
+        }
+        ctx.stroke();
+        // X in center
+        ctx.beginPath();
+        ctx.moveTo(centerX - sz * 0.4, centerY - sz * 0.4);
+        ctx.lineTo(centerX + sz * 0.4, centerY + sz * 0.4);
+        ctx.moveTo(centerX + sz * 0.4, centerY - sz * 0.4);
+        ctx.lineTo(centerX - sz * 0.4, centerY + sz * 0.4);
+        ctx.stroke();
+        break;
+      }
+      case 'warning': {
+        // Warning triangle
+        ctx.moveTo(centerX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.lineTo(startX, endY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || '#ffaa00';
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Exclamation mark
+        ctx.beginPath();
+        ctx.moveTo(centerX, startY + height * 0.35);
+        ctx.lineTo(centerX, startY + height * 0.6);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX, startY + height * 0.75, 3, 0, 2 * Math.PI);
+        ctx.fill();
+        break;
+      }
+      // ===== FILES & FOLDERS =====
+      case 'file':
+      case 'textfile': {
+        // File with folded corner
+        const foldSize = Math.min(width, height) * 0.2;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX - foldSize, startY);
+        ctx.lineTo(endX, startY + foldSize);
+        ctx.lineTo(endX, endY);
+        ctx.lineTo(startX, endY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Fold
+        ctx.beginPath();
+        ctx.moveTo(endX - foldSize, startY);
+        ctx.lineTo(endX - foldSize, startY + foldSize);
+        ctx.lineTo(endX, startY + foldSize);
+        ctx.stroke();
+        // Lines
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.15, centerY - height * 0.1);
+        ctx.lineTo(endX - width * 0.15, centerY - height * 0.1);
+        ctx.moveTo(startX + width * 0.15, centerY + height * 0.1);
+        ctx.lineTo(endX - width * 0.15, centerY + height * 0.1);
+        ctx.stroke();
+        break;
+      }
+      case 'folder': {
+        // Folder shape
+        const tabH = height * 0.2;
+        const tabW = width * 0.35;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY + tabH);
+        ctx.lineTo(startX, endY);
+        ctx.lineTo(endX, endY);
+        ctx.lineTo(endX, startY + tabH);
+        ctx.lineTo(startX + tabW + tabH, startY + tabH);
+        ctx.lineTo(startX + tabW, startY);
+        ctx.lineTo(startX, startY);
+        ctx.lineTo(startX, startY + tabH);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'archive': {
+        // Archive folder with zipper
+        const tabH = height * 0.2;
+        const tabW = width * 0.35;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY + tabH);
+        ctx.lineTo(startX, endY);
+        ctx.lineTo(endX, endY);
+        ctx.lineTo(endX, startY + tabH);
+        ctx.lineTo(startX + tabW + tabH, startY + tabH);
+        ctx.lineTo(startX + tabW, startY);
+        ctx.lineTo(startX, startY);
+        ctx.lineTo(startX, startY + tabH);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Zipper pattern
+        for (let i = 0; i < 4; i++) {
+          ctx.strokeRect(centerX - 4, startY + tabH + 8 + i * 12, 8, 8);
+        }
+        break;
+      }
+      // ===== COMMUNICATION =====
+      case 'email': {
+        // Envelope shape
+        ctx.strokeRect(startX, startY, width, height);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, height);
+        }
+        // Flap
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(centerX, centerY);
+        ctx.lineTo(endX, startY);
+        ctx.stroke();
+        break;
+      }
+      case 'send': {
+        // Paper airplane
+        ctx.beginPath();
+        ctx.moveTo(startX, centerY);
+        ctx.lineTo(endX, startY);
+        ctx.lineTo(centerX, centerY);
+        ctx.lineTo(endX, endY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Fold line
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(startX + width * 0.35, centerY + height * 0.15);
+        ctx.stroke();
+        break;
+      }
+      case 'inbox': {
+        // Inbox tray
+        ctx.beginPath();
+        ctx.moveTo(startX, startY + height * 0.3);
+        ctx.lineTo(startX + width * 0.2, startY + height * 0.3);
+        ctx.lineTo(startX + width * 0.25, centerY);
+        ctx.lineTo(endX - width * 0.25, centerY);
+        ctx.lineTo(endX - width * 0.2, startY + height * 0.3);
+        ctx.lineTo(endX, startY + height * 0.3);
+        ctx.lineTo(endX, endY);
+        ctx.lineTo(startX, endY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'chat': {
+        // Chat bubble
+        const bubbleR = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY - height * 0.1, bubbleR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Tail
+        ctx.beginPath();
+        ctx.moveTo(centerX - bubbleR * 0.3, centerY + bubbleR * 0.7);
+        ctx.lineTo(centerX - bubbleR * 0.8, endY);
+        ctx.lineTo(centerX, centerY + bubbleR * 0.5);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'discussion': {
+        // Multiple chat bubbles
+        ctx.strokeRect(startX, startY, width * 0.75, height * 0.6);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width * 0.75, height * 0.6);
+        }
+        ctx.strokeRect(startX + width * 0.25, startY + height * 0.4, width * 0.75, height * 0.6);
+        if (shapeFill) {
+          ctx.fillRect(startX + width * 0.25, startY + height * 0.4, width * 0.75, height * 0.6);
+        }
+        break;
+      }
+      case 'phone': {
+        // Phone circle
+        const phoneR = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, phoneR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Phone handset
+        ctx.beginPath();
+        ctx.moveTo(centerX - phoneR * 0.5, centerY - phoneR * 0.3);
+        ctx.quadraticCurveTo(centerX - phoneR * 0.6, centerY, centerX - phoneR * 0.5, centerY + phoneR * 0.3);
+        ctx.quadraticCurveTo(centerX, centerY + phoneR * 0.1, centerX + phoneR * 0.5, centerY + phoneR * 0.3);
+        ctx.quadraticCurveTo(centerX + phoneR * 0.6, centerY, centerX + phoneR * 0.5, centerY - phoneR * 0.3);
+        ctx.stroke();
+        break;
+      }
+      case 'share': {
+        // Share - nodes with connections
+        const nodeR = Math.min(width, height) * 0.12;
+        // Center node
+        ctx.beginPath();
+        ctx.arc(startX + width * 0.25, centerY, nodeR, 0, 2 * Math.PI);
+        ctx.fill();
+        // Top right node
+        ctx.beginPath();
+        ctx.arc(endX - width * 0.25, startY + height * 0.25, nodeR, 0, 2 * Math.PI);
+        ctx.fill();
+        // Bottom right node
+        ctx.beginPath();
+        ctx.arc(endX - width * 0.25, endY - height * 0.25, nodeR, 0, 2 * Math.PI);
+        ctx.fill();
+        // Lines
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.25 + nodeR, centerY - nodeR / 2);
+        ctx.lineTo(endX - width * 0.25 - nodeR, startY + height * 0.25 + nodeR / 2);
+        ctx.moveTo(startX + width * 0.25 + nodeR, centerY + nodeR / 2);
+        ctx.lineTo(endX - width * 0.25 - nodeR, endY - height * 0.25 - nodeR / 2);
+        ctx.stroke();
+        break;
+      }
+      // ===== DEVICES =====
+      case 'tablet': {
+        const cornerR = Math.min(width, height) * 0.08;
+        ctx.beginPath();
+        ctx.moveTo(startX + cornerR, startY);
+        ctx.lineTo(endX - cornerR, startY);
+        ctx.quadraticCurveTo(endX, startY, endX, startY + cornerR);
+        ctx.lineTo(endX, endY - cornerR);
+        ctx.quadraticCurveTo(endX, endY, endX - cornerR, endY);
+        ctx.lineTo(startX + cornerR, endY);
+        ctx.quadraticCurveTo(startX, endY, startX, endY - cornerR);
+        ctx.lineTo(startX, startY + cornerR);
+        ctx.quadraticCurveTo(startX, startY, startX + cornerR, startY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Screen
+        ctx.strokeRect(startX + width * 0.08, startY + height * 0.06, width * 0.84, height * 0.82);
+        // Home button
+        ctx.beginPath();
+        ctx.arc(centerX, endY - height * 0.04, 4, 0, 2 * Math.PI);
+        ctx.stroke();
+        break;
+      }
+      case 'watch': {
+        // Watch with band
+        const watchR = Math.min(width, height) * 0.35;
+        // Top band
+        ctx.strokeRect(centerX - watchR * 0.6, startY, watchR * 1.2, height * 0.15);
+        // Bottom band
+        ctx.strokeRect(centerX - watchR * 0.6, endY - height * 0.15, watchR * 1.2, height * 0.15);
+        // Watch face
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, watchR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'tv': {
+        // TV with stand
+        const screenH = height * 0.75;
+        ctx.strokeRect(startX, startY, width, screenH);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, screenH);
+        }
+        // Stand
+        ctx.beginPath();
+        ctx.moveTo(centerX, startY + screenH);
+        ctx.lineTo(centerX, endY - height * 0.08);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.3, endY);
+        ctx.lineTo(endX - width * 0.3, endY);
+        ctx.stroke();
+        break;
+      }
+      case 'speaker': {
+        // Speaker circle with cone
+        const spkR = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, spkR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Inner circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, spkR * 0.5, 0, 2 * Math.PI);
+        ctx.stroke();
+        // Center dot
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, spkR * 0.15, 0, 2 * Math.PI);
+        ctx.fill();
+        break;
+      }
+      case 'headphones': {
+        // Headphones shape
+        const hpR = Math.min(width, height) * 0.35;
+        // Headband arc
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, hpR, Math.PI, 0);
+        ctx.stroke();
+        // Left ear
+        ctx.beginPath();
+        ctx.ellipse(centerX - hpR, centerY + hpR * 0.3, hpR * 0.25, hpR * 0.4, 0, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Right ear
+        ctx.beginPath();
+        ctx.ellipse(centerX + hpR, centerY + hpR * 0.3, hpR * 0.25, hpR * 0.4, 0, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'camera': {
+        // Camera shape
+        const camR = Math.min(width, height) * 0.35;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, camR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Inner circle (lens)
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, camR * 0.6, 0, 2 * Math.PI);
+        ctx.stroke();
+        // Flash
+        ctx.beginPath();
+        ctx.arc(centerX + camR * 0.8, centerY - camR * 0.8, camR * 0.15, 0, 2 * Math.PI);
+        ctx.stroke();
+        break;
+      }
+      case 'printer': {
+        // Printer shape
+        const paperH = height * 0.25;
+        const bodyH = height * 0.4;
+        // Paper input
+        ctx.strokeRect(startX + width * 0.2, startY, width * 0.6, paperH);
+        // Main body
+        ctx.strokeRect(startX, startY + paperH, width, bodyH);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY + paperH, width, bodyH);
+        }
+        // Paper output
+        ctx.strokeRect(startX + width * 0.15, startY + paperH + bodyH, width * 0.7, height * 0.2);
+        break;
+      }
+      // ===== SECURITY =====
+      case 'lock': {
+        // Padlock shape
+        const bodyTop = startY + height * 0.4;
+        const shackleW = width * 0.5;
+        // Shackle
+        ctx.beginPath();
+        ctx.arc(centerX, bodyTop, shackleW / 2, Math.PI, 0);
+        ctx.stroke();
+        // Body
+        ctx.strokeRect(startX + width * 0.15, bodyTop, width * 0.7, height * 0.55);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX + width * 0.15, bodyTop, width * 0.7, height * 0.55);
+        }
+        // Keyhole
+        ctx.beginPath();
+        ctx.arc(centerX, bodyTop + height * 0.2, 6, 0, 2 * Math.PI);
+        ctx.moveTo(centerX, bodyTop + height * 0.25);
+        ctx.lineTo(centerX, bodyTop + height * 0.4);
+        ctx.stroke();
+        break;
+      }
+      case 'unlock': {
+        // Open padlock
+        const bodyTop = startY + height * 0.4;
+        const shackleW = width * 0.5;
+        // Open shackle
+        ctx.beginPath();
+        ctx.arc(centerX, bodyTop - height * 0.1, shackleW / 2, Math.PI, -0.2);
+        ctx.stroke();
+        // Body
+        ctx.strokeRect(startX + width * 0.15, bodyTop, width * 0.7, height * 0.55);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX + width * 0.15, bodyTop, width * 0.7, height * 0.55);
+        }
+        break;
+      }
+      case 'key':
+      case 'apikey': {
+        // Key shape
+        const keyHeadR = Math.min(width, height) * 0.25;
+        // Key head (circle)
+        ctx.beginPath();
+        ctx.arc(startX + keyHeadR + 5, centerY, keyHeadR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Key hole in head
+        ctx.beginPath();
+        ctx.arc(startX + keyHeadR + 5, centerY, keyHeadR * 0.4, 0, 2 * Math.PI);
+        ctx.stroke();
+        // Key shaft
+        ctx.beginPath();
+        ctx.moveTo(startX + keyHeadR * 2 + 5, centerY);
+        ctx.lineTo(endX - 5, centerY);
+        ctx.stroke();
+        // Key teeth
+        ctx.beginPath();
+        ctx.moveTo(endX - width * 0.2, centerY);
+        ctx.lineTo(endX - width * 0.2, centerY + height * 0.15);
+        ctx.moveTo(endX - width * 0.1, centerY);
+        ctx.lineTo(endX - width * 0.1, centerY + height * 0.1);
+        ctx.stroke();
+        break;
+      }
+      case 'shield':
+      case 'secured':
+      case 'vulnerable': {
+        // Shield shape
+        ctx.moveTo(centerX, startY);
+        ctx.quadraticCurveTo(endX, startY, endX, startY + height * 0.3);
+        ctx.quadraticCurveTo(endX, startY + height * 0.8, centerX, endY);
+        ctx.quadraticCurveTo(startX, startY + height * 0.8, startX, startY + height * 0.3);
+        ctx.quadraticCurveTo(startX, startY, centerX, startY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Check or X based on type
+        if (type === 'secured') {
+          ctx.beginPath();
+          ctx.moveTo(centerX - width * 0.2, centerY);
+          ctx.lineTo(centerX - width * 0.05, centerY + height * 0.15);
+          ctx.lineTo(centerX + width * 0.2, centerY - height * 0.1);
+          ctx.stroke();
+        } else if (type === 'vulnerable') {
+          ctx.beginPath();
+          ctx.moveTo(centerX - width * 0.15, centerY - height * 0.1);
+          ctx.lineTo(centerX + width * 0.15, centerY + height * 0.1);
+          ctx.moveTo(centerX + width * 0.15, centerY - height * 0.1);
+          ctx.lineTo(centerX - width * 0.15, centerY + height * 0.1);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'biometric': {
+        // Fingerprint
+        const fpR = Math.min(width, height) * 0.35;
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(centerX, centerY + fpR * 0.3, fpR * (0.3 + i * 0.2), Math.PI * 1.2, Math.PI * 1.8);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'visible': {
+        // Eye open
+        const eyeW = width * 0.8;
+        const eyeH = height * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.1, centerY);
+        ctx.quadraticCurveTo(centerX, centerY - eyeH, endX - width * 0.1, centerY);
+        ctx.quadraticCurveTo(centerX, centerY + eyeH, startX + width * 0.1, centerY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Iris
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, eyeH * 0.6, 0, 2 * Math.PI);
+        ctx.stroke();
+        // Pupil
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, eyeH * 0.3, 0, 2 * Math.PI);
+        ctx.fill();
+        break;
+      }
+      case 'hidden': {
+        // Eye with line through
+        const eyeW = width * 0.8;
+        const eyeH = height * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.1, centerY);
+        ctx.quadraticCurveTo(centerX, centerY - eyeH, endX - width * 0.1, centerY);
+        ctx.quadraticCurveTo(centerX, centerY + eyeH, startX + width * 0.1, centerY);
+        ctx.closePath();
+        ctx.stroke();
+        // Diagonal line
+        ctx.beginPath();
+        ctx.moveTo(startX, endY);
+        ctx.lineTo(endX, startY);
+        ctx.stroke();
+        break;
+      }
+      // ===== PEOPLE =====
+      case 'user':
+      case 'actor': {
+        // Person icon
+        const headR = Math.min(width, height) * 0.2;
+        // Head
+        ctx.beginPath();
+        ctx.arc(centerX, startY + headR + 5, headR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Body
+        ctx.beginPath();
+        ctx.arc(centerX, endY + headR, width * 0.4, Math.PI, 0, true);
+        ctx.stroke();
+        break;
+      }
+      case 'usersgroup': {
+        // Multiple people
+        const headR = Math.min(width, height) * 0.12;
+        // Back person
+        ctx.beginPath();
+        ctx.arc(centerX + headR, startY + headR + 5, headR, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX + headR, endY + headR * 0.5, width * 0.25, Math.PI, 0, true);
+        ctx.stroke();
+        // Front person
+        ctx.beginPath();
+        ctx.arc(centerX - headR, startY + headR * 1.5 + 5, headR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX - headR, endY + headR, width * 0.25, Math.PI, 0, true);
+        ctx.stroke();
+        break;
+      }
+      case 'adduser': {
+        // Person with plus
+        const headR = Math.min(width, height) * 0.15;
+        ctx.beginPath();
+        ctx.arc(centerX - width * 0.1, startY + headR + 5, headR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX - width * 0.1, endY + headR, width * 0.3, Math.PI, 0, true);
+        ctx.stroke();
+        // Plus sign
+        ctx.beginPath();
+        ctx.moveTo(endX - width * 0.2, centerY);
+        ctx.lineTo(endX - width * 0.05, centerY);
+        ctx.moveTo(endX - width * 0.125, centerY - height * 0.1);
+        ctx.lineTo(endX - width * 0.125, centerY + height * 0.1);
+        ctx.stroke();
+        break;
+      }
+      case 'verifieduser': {
+        // Person with check
+        const headR = Math.min(width, height) * 0.15;
+        ctx.beginPath();
+        ctx.arc(centerX - width * 0.1, startY + headR + 5, headR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX - width * 0.1, endY + headR, width * 0.3, Math.PI, 0, true);
+        ctx.stroke();
+        // Check
+        ctx.beginPath();
+        ctx.moveTo(endX - width * 0.25, centerY);
+        ctx.lineTo(endX - width * 0.15, centerY + height * 0.1);
+        ctx.lineTo(endX - width * 0.05, centerY - height * 0.1);
+        ctx.stroke();
+        break;
+      }
+      case 'removeuser': {
+        // Person with X
+        const headR = Math.min(width, height) * 0.15;
+        ctx.beginPath();
+        ctx.arc(centerX - width * 0.1, startY + headR + 5, headR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX - width * 0.1, endY + headR, width * 0.3, Math.PI, 0, true);
+        ctx.stroke();
+        // X
+        ctx.beginPath();
+        ctx.moveTo(endX - width * 0.22, centerY - height * 0.08);
+        ctx.lineTo(endX - width * 0.08, centerY + height * 0.08);
+        ctx.moveTo(endX - width * 0.08, centerY - height * 0.08);
+        ctx.lineTo(endX - width * 0.22, centerY + height * 0.08);
+        ctx.stroke();
+        break;
+      }
+      case 'organization':
+      case 'company': {
+        // Building shape
+        ctx.strokeRect(startX, startY, width, height);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, height);
+        }
+        // Windows
+        const winW = width * 0.2;
+        const winH = height * 0.15;
+        for (let row = 0; row < 3; row++) {
+          for (let col = 0; col < 2; col++) {
+            ctx.strokeRect(
+              startX + width * 0.15 + col * (winW + width * 0.3),
+              startY + height * 0.1 + row * (winH + height * 0.1),
+              winW, winH
+            );
+          }
+        }
+        // Door
+        ctx.strokeRect(centerX - winW / 2, endY - height * 0.25, winW, height * 0.25);
+        break;
+      }
+      // ===== STATUS =====
+      case 'successcircle': {
+        const r = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || '#22c55e';
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Checkmark
+        ctx.beginPath();
+        ctx.moveTo(centerX - r * 0.4, centerY);
+        ctx.lineTo(centerX - r * 0.1, centerY + r * 0.3);
+        ctx.lineTo(centerX + r * 0.4, centerY - r * 0.3);
+        ctx.stroke();
+        break;
+      }
+      case 'errorcircle': {
+        const r = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || '#ef4444';
+          ctx.fill();
+        }
+        ctx.stroke();
+        // X
+        ctx.beginPath();
+        ctx.moveTo(centerX - r * 0.3, centerY - r * 0.3);
+        ctx.lineTo(centerX + r * 0.3, centerY + r * 0.3);
+        ctx.moveTo(centerX + r * 0.3, centerY - r * 0.3);
+        ctx.lineTo(centerX - r * 0.3, centerY + r * 0.3);
+        ctx.stroke();
+        break;
+      }
+      case 'alertcircle': {
+        const r = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || '#f59e0b';
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Exclamation
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - r * 0.4);
+        ctx.lineTo(centerX, centerY + r * 0.1);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY + r * 0.35, 3, 0, 2 * Math.PI);
+        ctx.fill();
+        break;
+      }
+      case 'info': {
+        const r = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || '#3b82f6';
+          ctx.fill();
+        }
+        ctx.stroke();
+        // i
+        ctx.beginPath();
+        ctx.arc(centerX, centerY - r * 0.35, 3, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - r * 0.1);
+        ctx.lineTo(centerX, centerY + r * 0.4);
+        ctx.stroke();
+        break;
+      }
+      case 'help': {
+        const r = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // ?
+        ctx.font = `bold ${r}px Arial`;
+        ctx.fillStyle = shapeFill ? (darkMode ? '#fff' : '#000') : shapeColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('?', centerX, centerY + 2);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        break;
+      }
+      case 'notification': {
+        // Bell shape
+        const bellW = width * 0.7;
+        const bellH = height * 0.6;
+        ctx.beginPath();
+        ctx.moveTo(centerX, startY);
+        ctx.quadraticCurveTo(centerX, startY + bellH * 0.1, centerX - bellW / 2, startY + bellH * 0.7);
+        ctx.lineTo(centerX - bellW / 2, startY + bellH);
+        ctx.lineTo(centerX + bellW / 2, startY + bellH);
+        ctx.lineTo(centerX + bellW / 2, startY + bellH * 0.7);
+        ctx.quadraticCurveTo(centerX, startY + bellH * 0.1, centerX, startY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Clapper
+        ctx.beginPath();
+        ctx.arc(centerX, startY + bellH + 8, 5, 0, 2 * Math.PI);
+        ctx.stroke();
+        break;
+      }
+      case 'flag': {
+        // Flag on pole
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.2, startY);
+        ctx.lineTo(startX + width * 0.2, endY);
+        ctx.stroke();
+        // Flag
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.2, startY);
+        ctx.lineTo(endX, startY + height * 0.2);
+        ctx.lineTo(startX + width * 0.2, startY + height * 0.4);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      // ===== ACTIONS =====
+      case 'add': {
+        const r = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Plus
+        ctx.beginPath();
+        ctx.moveTo(centerX - r * 0.5, centerY);
+        ctx.lineTo(centerX + r * 0.5, centerY);
+        ctx.moveTo(centerX, centerY - r * 0.5);
+        ctx.lineTo(centerX, centerY + r * 0.5);
+        ctx.stroke();
+        break;
+      }
+      case 'remove': {
+        const r = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Minus
+        ctx.beginPath();
+        ctx.moveTo(centerX - r * 0.5, centerY);
+        ctx.lineTo(centerX + r * 0.5, centerY);
+        ctx.stroke();
+        break;
+      }
+      case 'check': {
+        const r = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || '#22c55e';
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Check
+        ctx.beginPath();
+        ctx.moveTo(centerX - r * 0.4, centerY);
+        ctx.lineTo(centerX - r * 0.1, centerY + r * 0.3);
+        ctx.lineTo(centerX + r * 0.4, centerY - r * 0.25);
+        ctx.stroke();
+        break;
+      }
+      case 'close': {
+        const r = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // X
+        ctx.beginPath();
+        ctx.moveTo(centerX - r * 0.35, centerY - r * 0.35);
+        ctx.lineTo(centerX + r * 0.35, centerY + r * 0.35);
+        ctx.moveTo(centerX + r * 0.35, centerY - r * 0.35);
+        ctx.lineTo(centerX - r * 0.35, centerY + r * 0.35);
+        ctx.stroke();
+        break;
+      }
+      case 'refresh': {
+        const r = Math.min(width, height) * 0.35;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0.3, Math.PI * 1.7);
+        ctx.stroke();
+        // Arrows
+        const arrowLen = 8;
+        ctx.beginPath();
+        ctx.moveTo(centerX + r * Math.cos(0.3), centerY + r * Math.sin(0.3));
+        ctx.lineTo(centerX + r * Math.cos(0.3) + arrowLen, centerY + r * Math.sin(0.3) - arrowLen);
+        ctx.moveTo(centerX + r * Math.cos(0.3), centerY + r * Math.sin(0.3));
+        ctx.lineTo(centerX + r * Math.cos(0.3) + arrowLen, centerY + r * Math.sin(0.3) + arrowLen);
+        ctx.stroke();
+        break;
+      }
+      case 'rotate': {
+        const r = Math.min(width, height) * 0.35;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, -0.5, Math.PI * 1.5);
+        ctx.stroke();
+        // Arrow
+        ctx.beginPath();
+        ctx.moveTo(centerX + r * Math.cos(-0.5), centerY + r * Math.sin(-0.5));
+        ctx.lineTo(centerX + r * Math.cos(-0.5) - 8, centerY + r * Math.sin(-0.5) - 5);
+        ctx.moveTo(centerX + r * Math.cos(-0.5), centerY + r * Math.sin(-0.5));
+        ctx.lineTo(centerX + r * Math.cos(-0.5) + 5, centerY + r * Math.sin(-0.5) - 8);
+        ctx.stroke();
+        break;
+      }
+      case 'download': {
+        const arrowW = width * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(centerX, startY);
+        ctx.lineTo(centerX, centerY + height * 0.2);
+        ctx.stroke();
+        // Arrow head
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY + height * 0.2);
+        ctx.lineTo(centerX - arrowW / 2, centerY - height * 0.05);
+        ctx.moveTo(centerX, centerY + height * 0.2);
+        ctx.lineTo(centerX + arrowW / 2, centerY - height * 0.05);
+        ctx.stroke();
+        // Tray
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.1, endY - height * 0.2);
+        ctx.lineTo(startX + width * 0.1, endY);
+        ctx.lineTo(endX - width * 0.1, endY);
+        ctx.lineTo(endX - width * 0.1, endY - height * 0.2);
+        ctx.stroke();
+        break;
+      }
+      case 'upload': {
+        const arrowW = width * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY + height * 0.1);
+        ctx.lineTo(centerX, startY + height * 0.15);
+        ctx.stroke();
+        // Arrow head up
+        ctx.beginPath();
+        ctx.moveTo(centerX, startY + height * 0.15);
+        ctx.lineTo(centerX - arrowW / 2, startY + height * 0.35);
+        ctx.moveTo(centerX, startY + height * 0.15);
+        ctx.lineTo(centerX + arrowW / 2, startY + height * 0.35);
+        ctx.stroke();
+        // Tray
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.1, endY - height * 0.2);
+        ctx.lineTo(startX + width * 0.1, endY);
+        ctx.lineTo(endX - width * 0.1, endY);
+        ctx.lineTo(endX - width * 0.1, endY - height * 0.2);
+        ctx.stroke();
+        break;
+      }
+      case 'search': {
+        const glassR = Math.min(width, height) * 0.3;
+        ctx.beginPath();
+        ctx.arc(centerX - width * 0.1, centerY - height * 0.1, glassR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Handle
+        ctx.beginPath();
+        ctx.moveTo(centerX + glassR * 0.4, centerY + glassR * 0.4);
+        ctx.lineTo(endX - width * 0.1, endY - height * 0.1);
+        ctx.stroke();
+        break;
+      }
+      case 'settings': {
+        const gearR = Math.min(width, height) * 0.35;
+        const teeth = 8;
+        ctx.beginPath();
+        for (let i = 0; i < teeth; i++) {
+          const angle = (i / teeth) * Math.PI * 2;
+          const outerX = centerX + Math.cos(angle) * gearR;
+          const outerY = centerY + Math.sin(angle) * gearR;
+          const innerAngle = angle + Math.PI / teeth;
+          const innerX = centerX + Math.cos(innerAngle) * gearR * 0.7;
+          const innerY = centerY + Math.sin(innerAngle) * gearR * 0.7;
+          if (i === 0) ctx.moveTo(outerX, outerY);
+          else ctx.lineTo(outerX, outerY);
+          ctx.lineTo(innerX, innerY);
+        }
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Center hole
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, gearR * 0.25, 0, 2 * Math.PI);
+        ctx.stroke();
+        break;
+      }
+      // ===== CHARTS =====
+      case 'barchart': {
+        ctx.strokeRect(startX, startY, width, height);
+        // Bars
+        const barW = width * 0.15;
+        const bars = [0.5, 0.8, 0.4, 0.9, 0.6];
+        bars.forEach((h, i) => {
+          const barH = height * 0.8 * h;
+          const x = startX + width * 0.1 + i * (barW + width * 0.05);
+          ctx.fillStyle = shapeColor;
+          ctx.fillRect(x, endY - height * 0.1 - barH, barW, barH);
+          ctx.strokeRect(x, endY - height * 0.1 - barH, barW, barH);
+        });
+        break;
+      }
+      case 'piechart': {
+        const pieR = Math.min(width, height) * 0.4;
+        // Slices
+        const slices = [0.3, 0.25, 0.25, 0.2];
+        let startAngle = 0;
+        slices.forEach((slice, i) => {
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.arc(centerX, centerY, pieR, startAngle, startAngle + slice * Math.PI * 2);
+          ctx.closePath();
+          ctx.stroke();
+          if (shapeFill && i === 0) {
+            ctx.fillStyle = fillColor || shapeColor;
+            ctx.fill();
+          }
+          startAngle += slice * Math.PI * 2;
+        });
+        break;
+      }
+      case 'linechart': {
+        ctx.strokeRect(startX, startY, width, height);
+        // Line
+        ctx.beginPath();
+        const points = [0.7, 0.4, 0.6, 0.2, 0.5];
+        points.forEach((p, i) => {
+          const x = startX + width * 0.1 + i * width * 0.2;
+          const y = startY + height * 0.1 + height * 0.8 * (1 - p);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        // Dots
+        points.forEach((p, i) => {
+          const x = startX + width * 0.1 + i * width * 0.2;
+          const y = startY + height * 0.1 + height * 0.8 * (1 - p);
+          ctx.beginPath();
+          ctx.arc(x, y, 3, 0, 2 * Math.PI);
+          ctx.fill();
+        });
+        break;
+      }
+      case 'trendup': {
+        ctx.beginPath();
+        ctx.moveTo(startX, endY);
+        ctx.lineTo(endX, startY);
+        ctx.stroke();
+        // Arrow head
+        ctx.beginPath();
+        ctx.moveTo(endX, startY);
+        ctx.lineTo(endX - 12, startY + 4);
+        ctx.moveTo(endX, startY);
+        ctx.lineTo(endX - 4, startY + 12);
+        ctx.stroke();
+        break;
+      }
+      case 'trenddown': {
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        // Arrow head
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - 12, endY - 4);
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - 4, endY - 12);
+        ctx.stroke();
+        break;
+      }
+      case 'activity': {
+        // ECG-like line
+        ctx.beginPath();
+        ctx.moveTo(startX, centerY);
+        ctx.lineTo(startX + width * 0.2, centerY);
+        ctx.lineTo(startX + width * 0.3, centerY - height * 0.3);
+        ctx.lineTo(startX + width * 0.4, centerY + height * 0.3);
+        ctx.lineTo(startX + width * 0.5, centerY - height * 0.4);
+        ctx.lineTo(startX + width * 0.6, centerY);
+        ctx.lineTo(endX, centerY);
+        ctx.stroke();
+        break;
+      }
+      // ===== MISC =====
+      case 'idea': {
+        // Lightbulb
+        const bulbR = Math.min(width, height) * 0.3;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY - height * 0.1, bulbR, Math.PI * 0.2, Math.PI * 0.8, true);
+        ctx.quadraticCurveTo(centerX - bulbR * 0.6, centerY + bulbR * 0.5, centerX - bulbR * 0.4, endY - height * 0.15);
+        ctx.lineTo(centerX + bulbR * 0.4, endY - height * 0.15);
+        ctx.quadraticCurveTo(centerX + bulbR * 0.6, centerY + bulbR * 0.5, centerX + bulbR * Math.cos(Math.PI * 0.2), centerY - height * 0.1 + bulbR * Math.sin(Math.PI * 0.2));
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || '#fbbf24';
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Base lines
+        ctx.beginPath();
+        ctx.moveTo(centerX - bulbR * 0.3, endY - height * 0.1);
+        ctx.lineTo(centerX + bulbR * 0.3, endY - height * 0.1);
+        ctx.moveTo(centerX - bulbR * 0.25, endY - height * 0.05);
+        ctx.lineTo(centerX + bulbR * 0.25, endY - height * 0.05);
+        ctx.stroke();
+        break;
+      }
+      case 'target': {
+        // Concentric circles
+        const targetR = Math.min(width, height) * 0.4;
+        for (let i = 3; i > 0; i--) {
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, targetR * (i / 3), 0, 2 * Math.PI);
+          if (shapeFill && i === 3) {
+            ctx.fillStyle = fillColor || shapeColor;
+            ctx.fill();
+          }
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'focus': {
+        // Crosshair
+        const crossR = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, crossR, 0, 2 * Math.PI);
+        ctx.stroke();
+        // Cross
+        ctx.beginPath();
+        ctx.moveTo(centerX - crossR - 8, centerY);
+        ctx.lineTo(centerX - crossR + 8, centerY);
+        ctx.moveTo(centerX + crossR - 8, centerY);
+        ctx.lineTo(centerX + crossR + 8, centerY);
+        ctx.moveTo(centerX, centerY - crossR - 8);
+        ctx.lineTo(centerX, centerY - crossR + 8);
+        ctx.moveTo(centerX, centerY + crossR - 8);
+        ctx.lineTo(centerX, centerY + crossR + 8);
+        ctx.stroke();
+        break;
+      }
+      case 'bookmark': {
+        // Bookmark ribbon
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.2, startY);
+        ctx.lineTo(startX + width * 0.2, endY - height * 0.1);
+        ctx.lineTo(centerX, endY - height * 0.25);
+        ctx.lineTo(endX - width * 0.2, endY - height * 0.1);
+        ctx.lineTo(endX - width * 0.2, startY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'tag': {
+        // Tag shape
+        ctx.beginPath();
+        ctx.moveTo(startX, startY + height * 0.15);
+        ctx.lineTo(startX + width * 0.3, startY);
+        ctx.lineTo(endX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.lineTo(startX + width * 0.3, endY);
+        ctx.lineTo(startX, endY - height * 0.15);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Hole
+        ctx.beginPath();
+        ctx.arc(startX + width * 0.25, centerY, 4, 0, 2 * Math.PI);
+        ctx.stroke();
+        break;
+      }
+      case 'award':
+      case 'trophy': {
+        // Trophy cup
+        const cupW = width * 0.6;
+        const cupH = height * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(centerX - cupW / 2, startY);
+        ctx.quadraticCurveTo(centerX - cupW / 2, startY + cupH, centerX, startY + cupH);
+        ctx.quadraticCurveTo(centerX + cupW / 2, startY + cupH, centerX + cupW / 2, startY);
+        ctx.lineTo(centerX - cupW / 2, startY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || '#fbbf24';
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Handles
+        ctx.beginPath();
+        ctx.arc(centerX - cupW / 2 - 8, startY + cupH * 0.3, 10, Math.PI * 0.5, Math.PI * 1.5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX + cupW / 2 + 8, startY + cupH * 0.3, 10, Math.PI * 1.5, Math.PI * 0.5);
+        ctx.stroke();
+        // Stem
+        ctx.strokeRect(centerX - 5, startY + cupH, 10, height * 0.2);
+        // Base
+        ctx.strokeRect(centerX - cupW * 0.4, endY - height * 0.15, cupW * 0.8, height * 0.1);
+        break;
+      }
+      case 'lightning': {
+        // Lightning bolt
+        ctx.beginPath();
+        ctx.moveTo(centerX + width * 0.1, startY);
+        ctx.lineTo(startX + width * 0.15, centerY);
+        ctx.lineTo(centerX, centerY);
+        ctx.lineTo(centerX - width * 0.1, endY);
+        ctx.lineTo(endX - width * 0.15, centerY);
+        ctx.lineTo(centerX, centerY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || '#fbbf24';
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'fire': {
+        // Flame shape
+        ctx.beginPath();
+        ctx.moveTo(centerX, endY);
+        ctx.quadraticCurveTo(startX, endY - height * 0.3, startX + width * 0.2, centerY);
+        ctx.quadraticCurveTo(startX + width * 0.1, startY + height * 0.3, centerX, startY);
+        ctx.quadraticCurveTo(endX - width * 0.1, startY + height * 0.3, endX - width * 0.2, centerY);
+        ctx.quadraticCurveTo(endX, endY - height * 0.3, centerX, endY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || '#f97316';
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'puzzle': {
+        // Puzzle piece
+        const pw = width * 0.8;
+        const ph = height * 0.8;
+        const knobR = Math.min(pw, ph) * 0.12;
+        ctx.beginPath();
+        ctx.moveTo(startX + width * 0.1, startY + height * 0.1);
+        // Top edge with knob
+        ctx.lineTo(startX + width * 0.35, startY + height * 0.1);
+        ctx.arc(centerX, startY + height * 0.1, knobR, Math.PI, 0, true);
+        ctx.lineTo(endX - width * 0.1, startY + height * 0.1);
+        // Right edge with indent
+        ctx.lineTo(endX - width * 0.1, startY + height * 0.35);
+        ctx.arc(endX - width * 0.1, centerY, knobR, -Math.PI / 2, Math.PI / 2, true);
+        ctx.lineTo(endX - width * 0.1, endY - height * 0.1);
+        // Bottom
+        ctx.lineTo(startX + width * 0.1, endY - height * 0.1);
+        // Left edge
+        ctx.lineTo(startX + width * 0.1, startY + height * 0.1);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'compass': {
+        // Compass
+        const compR = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, compR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Needle
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - compR * 0.7);
+        ctx.lineTo(centerX - compR * 0.15, centerY);
+        ctx.lineTo(centerX, centerY + compR * 0.7);
+        ctx.lineTo(centerX + compR * 0.15, centerY);
+        ctx.closePath();
+        ctx.stroke();
+        // N indicator
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - compR * 0.7);
+        ctx.lineTo(centerX - compR * 0.15, centerY);
+        ctx.lineTo(centerX, centerY);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      }
+      // ===== DATA STRUCTURES =====
+      case 'array': {
+        // Array with cells
+        const cellCount = 5;
+        const cellW = width / cellCount;
+        for (let i = 0; i < cellCount; i++) {
+          ctx.strokeRect(startX + i * cellW, startY, cellW, height);
+          ctx.font = `${Math.min(cellW, height) * 0.4}px monospace`;
+          ctx.fillStyle = shapeColor;
+          ctx.textAlign = 'center';
+          ctx.fillText(String(i), startX + i * cellW + cellW / 2, centerY + height * 0.15);
+        }
+        ctx.textAlign = 'left';
+        break;
+      }
+      case 'stack': {
+        // Stack - vertical boxes
+        const boxCount = 4;
+        const boxH = height / boxCount;
+        for (let i = 0; i < boxCount; i++) {
+          ctx.strokeRect(startX, startY + i * boxH, width, boxH);
+          if (shapeFill && i === 0) {
+            ctx.fillStyle = fillColor || shapeColor;
+            ctx.fillRect(startX, startY + i * boxH, width, boxH);
+          }
+        }
+        // Arrow
+        ctx.beginPath();
+        ctx.moveTo(startX - 15, startY + boxH / 2);
+        ctx.lineTo(startX - 5, startY + boxH / 2);
+        ctx.moveTo(startX - 5, startY + boxH / 2);
+        ctx.lineTo(startX - 10, startY + boxH / 2 - 5);
+        ctx.moveTo(startX - 5, startY + boxH / 2);
+        ctx.lineTo(startX - 10, startY + boxH / 2 + 5);
+        ctx.stroke();
+        break;
+      }
+      case 'queue': {
+        // Queue - horizontal boxes
+        const boxCount = 4;
+        const boxW = width / boxCount;
+        for (let i = 0; i < boxCount; i++) {
+          ctx.strokeRect(startX + i * boxW, startY, boxW, height);
+        }
+        // In arrow
+        ctx.beginPath();
+        ctx.moveTo(startX - 15, centerY);
+        ctx.lineTo(startX - 5, centerY);
+        ctx.lineTo(startX - 10, centerY - 5);
+        ctx.moveTo(startX - 5, centerY);
+        ctx.lineTo(startX - 10, centerY + 5);
+        ctx.stroke();
+        // Out arrow
+        ctx.beginPath();
+        ctx.moveTo(endX + 5, centerY);
+        ctx.lineTo(endX + 15, centerY);
+        ctx.lineTo(endX + 10, centerY - 5);
+        ctx.moveTo(endX + 15, centerY);
+        ctx.lineTo(endX + 10, centerY + 5);
+        ctx.stroke();
+        break;
+      }
+      case 'node': {
+        // Node circle with dot
+        const nodeR = Math.min(width, height) * 0.4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, nodeR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, nodeR * 0.3, 0, 2 * Math.PI);
+        ctx.fillStyle = shapeColor;
+        ctx.fill();
+        break;
+      }
+      case 'pointer': {
+        // Pointer arrow
+        ctx.beginPath();
+        ctx.moveTo(startX, centerY);
+        ctx.lineTo(endX - 10, centerY);
+        ctx.stroke();
+        // Arrow head
+        ctx.beginPath();
+        ctx.moveTo(endX, centerY);
+        ctx.lineTo(endX - 15, centerY - 8);
+        ctx.lineTo(endX - 15, centerY + 8);
+        ctx.closePath();
+        ctx.fillStyle = shapeColor;
+        ctx.fill();
+        break;
+      }
+      case 'treenode': {
+        // Tree node - circle with children
+        const tnR = Math.min(width, height) * 0.2;
+        // Parent
+        ctx.beginPath();
+        ctx.arc(centerX, startY + tnR, tnR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Lines to children
+        ctx.beginPath();
+        ctx.moveTo(centerX, startY + tnR * 2);
+        ctx.lineTo(startX + width * 0.25, endY - tnR);
+        ctx.moveTo(centerX, startY + tnR * 2);
+        ctx.lineTo(endX - width * 0.25, endY - tnR);
+        ctx.stroke();
+        // Children
+        ctx.beginPath();
+        ctx.arc(startX + width * 0.25, endY - tnR, tnR * 0.7, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(endX - width * 0.25, endY - tnR, tnR * 0.7, 0, 2 * Math.PI);
+        ctx.stroke();
+        break;
+      }
+      case 'hashtable': {
+        // Hash table - box with hash lines
+        ctx.strokeRect(startX, startY, width, height);
+        // Hash symbol
+        ctx.beginPath();
+        ctx.moveTo(centerX - width * 0.2, startY + height * 0.3);
+        ctx.lineTo(centerX + width * 0.2, startY + height * 0.3);
+        ctx.moveTo(centerX - width * 0.2, endY - height * 0.3);
+        ctx.lineTo(centerX + width * 0.2, endY - height * 0.3);
+        ctx.moveTo(centerX - width * 0.1, startY + height * 0.15);
+        ctx.lineTo(centerX - width * 0.1, endY - height * 0.15);
+        ctx.moveTo(centerX + width * 0.1, startY + height * 0.15);
+        ctx.lineTo(centerX + width * 0.1, endY - height * 0.15);
+        ctx.stroke();
+        break;
+      }
+      case 'graphnode': {
+        // Graph - connected nodes
+        const gnR = Math.min(width, height) * 0.15;
+        // Center node
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, gnR, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Surrounding nodes
+        const nodeCount = 4;
+        for (let i = 0; i < nodeCount; i++) {
+          const angle = (i / nodeCount) * Math.PI * 2 - Math.PI / 2;
+          const nx = centerX + Math.cos(angle) * width * 0.35;
+          const ny = centerY + Math.sin(angle) * height * 0.35;
+          // Line to center
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(nx, ny);
+          ctx.stroke();
+          // Node
+          ctx.beginPath();
+          ctx.arc(nx, ny, gnR * 0.7, 0, 2 * Math.PI);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'linkedlist': {
+        // Linked list - boxes with arrows
+        const boxCount = 3;
+        const boxW = width / (boxCount * 1.5);
+        const gap = boxW * 0.5;
+        for (let i = 0; i < boxCount; i++) {
+          const x = startX + i * (boxW + gap);
+          ctx.strokeRect(x, startY, boxW, height);
+          // Arrow to next
+          if (i < boxCount - 1) {
+            ctx.beginPath();
+            ctx.moveTo(x + boxW, centerY);
+            ctx.lineTo(x + boxW + gap, centerY);
+            ctx.lineTo(x + boxW + gap - 5, centerY - 5);
+            ctx.moveTo(x + boxW + gap, centerY);
+            ctx.lineTo(x + boxW + gap - 5, centerY + 5);
+            ctx.stroke();
+          }
+        }
+        break;
+      }
+      // ===== UML =====
+      case 'class': {
+        // UML class box with sections
+        const sectionH = height / 3;
+        ctx.strokeRect(startX, startY, width, height);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, sectionH);
+        }
+        // Dividers
+        ctx.beginPath();
+        ctx.moveTo(startX, startY + sectionH);
+        ctx.lineTo(endX, startY + sectionH);
+        ctx.moveTo(startX, startY + sectionH * 2);
+        ctx.lineTo(endX, startY + sectionH * 2);
+        ctx.stroke();
+        break;
+      }
+      case 'interface': {
+        // Interface - class with <<interface>>
+        const sectionH = height / 3;
+        ctx.strokeRect(startX, startY, width, height);
+        // Dividers
+        ctx.beginPath();
+        ctx.moveTo(startX, startY + sectionH);
+        ctx.lineTo(endX, startY + sectionH);
+        ctx.moveTo(startX, startY + sectionH * 2);
+        ctx.lineTo(endX, startY + sectionH * 2);
+        ctx.stroke();
+        // Label
+        ctx.font = `${Math.min(width * 0.15, sectionH * 0.4)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = shapeColor;
+        ctx.fillText('«interface»', centerX, startY + sectionH * 0.6);
+        ctx.textAlign = 'left';
+        break;
+      }
+      case 'package': {
+        // UML package
+        const tabH = height * 0.15;
+        const tabW = width * 0.4;
+        // Tab
+        ctx.strokeRect(startX, startY, tabW, tabH);
+        // Body
+        ctx.strokeRect(startX, startY + tabH, width, height - tabH);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, tabW, tabH);
+        }
+        break;
+      }
+      case 'lifeline': {
+        // UML lifeline - box with dashed line
+        const boxH = height * 0.25;
+        ctx.strokeRect(startX, startY, width, boxH);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, boxH);
+        }
+        // Dashed line
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(centerX, startY + boxH);
+        ctx.lineTo(centerX, endY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        break;
+      }
+      case 'activation': {
+        // UML activation box
+        ctx.strokeRect(startX + width * 0.35, startY, width * 0.3, height);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX + width * 0.35, startY, width * 0.3, height);
+        }
+        break;
+      }
+      // ===== ER Diagram =====
+      case 'entity': {
+        // ER entity - rectangle with name
+        ctx.strokeRect(startX, startY, width, height);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, height);
+        }
+        break;
+      }
+      case 'relationship': {
+        // ER relationship - diamond
+        ctx.moveTo(centerX, startY);
+        ctx.lineTo(endX, centerY);
+        ctx.lineTo(centerX, endY);
+        ctx.lineTo(startX, centerY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'attribute': {
+        // ER attribute - ellipse
+        const attrRX = width / 2;
+        const attrRY = height / 2;
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, attrRX, attrRY, 0, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'primarykey': {
+        // Primary key - ellipse with underline
+        const pkRX = width / 2;
+        const pkRY = height / 2;
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, pkRX, pkRY, 0, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        // Underline
+        ctx.beginPath();
+        ctx.moveTo(centerX - pkRX * 0.5, centerY + 5);
+        ctx.lineTo(centerX + pkRX * 0.5, centerY + 5);
+        ctx.stroke();
+        break;
+      }
+      case 'foreignkey': {
+        // Foreign key - ellipse dashed
+        const fkRX = width / 2;
+        const fkRY = height / 2;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, fkRX, fkRY, 0, 0, 2 * Math.PI);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        break;
+      }
+      case 'table': {
+        // Table with header
+        const headerH = height * 0.25;
+        ctx.strokeRect(startX, startY, width, height);
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fillRect(startX, startY, width, headerH);
+        }
+        // Header divider
+        ctx.beginPath();
+        ctx.moveTo(startX, startY + headerH);
+        ctx.lineTo(endX, startY + headerH);
+        ctx.stroke();
+        // Column divider
+        ctx.beginPath();
+        ctx.moveTo(centerX, startY);
+        ctx.lineTo(centerX, endY);
+        ctx.stroke();
+        break;
+      }
+      default:
+        // Fallback to rounded rectangle for unknown types
+        const cornerR = 8;
+        ctx.beginPath();
+        ctx.moveTo(startX + cornerR, startY);
+        ctx.lineTo(endX - cornerR, startY);
+        ctx.quadraticCurveTo(endX, startY, endX, startY + cornerR);
+        ctx.lineTo(endX, endY - cornerR);
+        ctx.quadraticCurveTo(endX, endY, endX - cornerR, endY);
+        ctx.lineTo(startX + cornerR, endY);
+        ctx.quadraticCurveTo(startX, endY, startX, endY - cornerR);
+        ctx.lineTo(startX, startY + cornerR);
+        ctx.quadraticCurveTo(startX, startY, startX + cornerR, startY);
+        ctx.closePath();
+        if (shapeFill) {
+          ctx.fillStyle = fillColor || shapeColor;
+          ctx.fill();
+        }
+        ctx.stroke();
+        break;
     }
 
     ctx.globalAlpha = 1;
     ctx.setLineDash([]);
   }, [setContextStrokeStyle]);
+
+  // Draw icon shape on canvas using SVG
+  const drawIconShape = useCallback((ctx: CanvasRenderingContext2D, IconComponent: any, x: number, y: number, w: number, h: number, shapeColor: string, shapeFill: boolean = false) => {
+    // Create a temporary container to render the icon
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    document.body.appendChild(tempDiv);
+
+    // Render the icon to get its SVG
+    const iconSize = Math.min(Math.abs(w), Math.abs(h));
+    const iconX = x + (w - iconSize) / 2;
+    const iconY = y + (h - iconSize) / 2;
+
+    // Create SVG manually based on icon
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', String(iconSize));
+    svg.setAttribute('height', String(iconSize));
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', shapeFill ? shapeColor : 'none');
+    svg.setAttribute('stroke', shapeColor);
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+
+    // Get the path data from the icon
+    const iconElement = document.createElement('div');
+    // We'll use a simpler approach - draw a rounded rectangle with the icon label
+    document.body.removeChild(tempDiv);
+
+    // Draw a rounded rectangle container
+    const radius = 8;
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + w - radius, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+    ctx.lineTo(x + w, y + h - radius);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    ctx.lineTo(x + radius, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    
+    if (shapeFill) {
+      ctx.fillStyle = shapeColor + '20';
+      ctx.fill();
+    }
+    ctx.strokeStyle = shapeColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }, []);
 
   // Draw text on canvas
   const drawText = useCallback((ctx: CanvasRenderingContext2D, textData: TextData) => {
@@ -395,19 +3549,105 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     link.click();
   }, [boardId]);
 
+  // Save board state as JSON
+  const saveBoardState = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const boardState = {
+      version: '1.0',
+      boardId,
+      timestamp: new Date().toISOString(),
+      canvasData: canvas.toDataURL('image/png'),
+      backgroundColor,
+      stickyNotes,
+      placedImages,
+      darkMode,
+      showGrid
+    };
+
+    const blob = new Blob([JSON.stringify(boardState, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.download = `drawflow-board-${boardId}-${Date.now()}.json`;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }, [boardId, backgroundColor, stickyNotes, placedImages, darkMode, showGrid]);
+
+  // Load board state from JSON file
+  const loadBoardState = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const boardState = JSON.parse(e.target?.result as string);
+        
+        // Validate the file
+        if (!boardState.version || !boardState.canvasData) {
+          alert('Invalid board state file!');
+          return;
+        }
+
+        // Load canvas data
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+
+        const img = new Image();
+        img.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          
+          // Restore other state
+          if (boardState.backgroundColor) {
+            setBackgroundColor(boardState.backgroundColor);
+            backgroundColorRef.current = boardState.backgroundColor;
+          }
+          if (boardState.stickyNotes) {
+            setStickyNotes(boardState.stickyNotes);
+          }
+          if (boardState.placedImages) {
+            setPlacedImages(boardState.placedImages);
+          }
+          if (boardState.darkMode !== undefined) {
+            setDarkMode(boardState.darkMode);
+          }
+          if (boardState.showGrid !== undefined) {
+            setShowGrid(boardState.showGrid);
+          }
+
+          // Save to undo stack
+          saveToUndoStack();
+        };
+        img.src = boardState.canvasData;
+
+      } catch (error) {
+        console.error('Error loading board state:', error);
+        alert('Error loading board state file!');
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset input
+    event.target.value = '';
+  }, [saveToUndoStack]);
+
   // Canvas resize handler
   useEffect(() => {
     const canvas = canvasRef.current;
     const overlayCanvas = overlayCanvasRef.current;
-    if (!canvas || !overlayCanvas) return;
+    const container = containerRef.current;
+    if (!canvas || !overlayCanvas || !container) return;
 
     const resizeCanvas = () => {
-      const container = canvas.parentElement;
       if (container) {
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
-        overlayCanvas.width = container.clientWidth;
-        overlayCanvas.height = container.clientHeight;
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        overlayCanvas.width = rect.width;
+        overlayCanvas.height = rect.height;
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.fillStyle = backgroundColorRef.current;
@@ -417,10 +3657,19 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       }
     };
 
+    // Use ResizeObserver to detect container size changes (sidebar toggle)
+    const resizeObserver = new ResizeObserver(() => {
+      resizeCanvas();
+    });
+    
+    resizeObserver.observe(container);
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    return () => window.removeEventListener('resize', resizeCanvas);
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      resizeObserver.disconnect();
+    };
   }, [loadDrawingHistory]);
 
   // Background color change effect - uses a ref to track if this is the initial load
@@ -428,6 +3677,9 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
   const previousBgColorRef = useRef(backgroundColor);
   
   useEffect(() => {
+    // Always keep the ref in sync
+    backgroundColorRef.current = backgroundColor;
+    
     // Skip effect on initial mount
     if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
@@ -845,13 +4097,13 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           y: panOffset.y + (y - panStartRef.current.y),
         });
         panStartRef.current = { x, y };
-      } else if (['rectangle', 'circle', 'line', 'arrow', 'triangle', 'star', 'heart'].includes(tool) && shapeStartRef.current) {
+      } else if (!['select', 'pan', 'pen', 'eraser', 'text', 'highlighter', 'laser', 'stickynote', 'image'].includes(tool) && shapeStartRef.current) {
         const overlayCanvas = overlayCanvasRef.current;
         const ctx = overlayCanvas?.getContext('2d');
         if (ctx && overlayCanvas) {
           ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
           drawShape(ctx, {
-            type: tool as 'rectangle' | 'circle' | 'line' | 'arrow' | 'triangle' | 'star' | 'heart',
+            type: tool as ShapeData['type'],
             startX: shapeStartRef.current.x,
             startY: shapeStartRef.current.y,
             endX: x,
@@ -942,7 +4194,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     setIsDrawing(true);
     lastPosRef.current = { x, y };
     
-    if (['rectangle', 'circle', 'line', 'arrow', 'triangle', 'star', 'heart'].includes(tool)) {
+    if (['select', 'pan', 'pen', 'eraser', 'text', 'highlighter', 'laser', 'stickynote', 'image'].includes(tool) === false) {
       shapeStartRef.current = { x, y };
     }
     
@@ -956,7 +4208,9 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
   const continueDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     if (!isDrawing || !lastPosRef.current) return;
-    if (['rectangle', 'circle', 'line', 'arrow', 'triangle', 'star', 'heart', 'pan', 'select', 'text', 'laser', 'stickynote'].includes(tool)) return;
+    // Skip for shape tools (everything except these drawing tools)
+    const drawingTools = ['pen', 'eraser', 'highlighter'];
+    if (!drawingTools.includes(tool)) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
@@ -993,14 +4247,16 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
   };
 
   const stopDrawing = (e?: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (isDrawing && ['rectangle', 'circle', 'line', 'arrow', 'triangle', 'star', 'heart'].includes(tool) && shapeStartRef.current && e) {
+    const nonShapeTools = ['select', 'pan', 'pen', 'eraser', 'text', 'highlighter', 'laser', 'stickynote', 'image'];
+    const isShapeTool = !nonShapeTools.includes(tool);
+    if (isDrawing && isShapeTool && shapeStartRef.current && e) {
       const { x, y } = getCoordinates(e);
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext('2d');
       
       if (ctx) {
         const shapeData: ShapeData = {
-          type: tool as 'rectangle' | 'circle' | 'line' | 'arrow' | 'triangle' | 'star' | 'heart',
+          type: tool as ShapeData['type'],
           startX: shapeStartRef.current.x,
           startY: shapeStartRef.current.y,
           endX: x,
@@ -1246,287 +4502,367 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
         className="hidden"
       />
 
-      {/* Top Toolbar - Organized by groups */}
-      <div className="bg-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 p-2 flex items-center justify-center gap-2">
-        {/* Basic Tools */}
-        <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
-          {tools.filter(t => t.group === 'basic').map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTool(t.id as Tool)}
-              className={`p-2 rounded-lg transition-all ${
-                tool === t.id
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg'
-                  : 'text-slate-300 hover:bg-slate-600/50'
-              }`}
-              title={t.label}
-            >
-              <t.icon size={18} />
-            </button>
-          ))}
-        </div>
+      {/* Hidden file input for board state load */}
+      <input
+        ref={boardFileInputRef}
+        type="file"
+        accept=".json"
+        onChange={loadBoardState}
+        className="hidden"
+      />
 
-        {/* Drawing Tools */}
-        <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
-          {tools.filter(t => t.group === 'draw').map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTool(t.id as Tool)}
-              className={`p-2 rounded-lg transition-all ${
-                tool === t.id
-                  ? t.id === 'laser' 
-                    ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg shadow-red-500/30'
-                    : t.id === 'highlighter'
-                    ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white shadow-lg shadow-yellow-500/30'
-                    : 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg'
-                  : 'text-slate-300 hover:bg-slate-600/50'
-              }`}
-              title={t.label}
-            >
-              <t.icon size={18} />
-            </button>
-          ))}
+      {/* Top Toolbar - Reorganized with stroke, background, width */}
+      <div className="bg-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 p-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {/* Toggle Shapes Sidebar - Fancy Pill Toggle */}
           <button
-            onClick={() => setTool('eraser')}
-            className={`p-2 rounded-lg transition-all ${
-              tool === 'eraser'
-                ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg'
-                : 'text-slate-300 hover:bg-slate-600/50'
+            onClick={() => setShowShapesSidebar(!showShapesSidebar)}
+            className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-500 overflow-hidden ${
+              showShapesSidebar
+                ? 'bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-500 shadow-lg shadow-purple-500/30'
+                : 'bg-slate-700/80 hover:bg-slate-600/80 border border-slate-500/50'
             }`}
-            title="Eraser (E)"
+            title={showShapesSidebar ? 'Hide Shapes Panel' : 'Show Shapes Panel'}
           >
-            <Eraser size={18} />
+            {/* Animated background glow */}
+            <div className={`absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 opacity-0 blur-xl transition-opacity duration-500 ${
+              showShapesSidebar ? 'group-hover:opacity-50' : ''
+            }`} />
+            
+            {/* Icon with rotation animation */}
+            <div className={`relative z-10 transition-transform duration-300 ${showShapesSidebar ? 'rotate-0' : 'rotate-180'}`}>
+              <Shapes size={16} className="text-white" />
+            </div>
+            
+            {/* Text label */}
+            <span className={`relative z-10 text-xs font-semibold text-white transition-all duration-300 ${
+              showShapesSidebar ? 'opacity-100 max-w-20' : 'opacity-0 max-w-0 overflow-hidden'
+            }`}>
+              Shapes
+            </span>
+            
+            {/* Toggle indicator dot */}
+            <div className={`relative z-10 w-2 h-2 rounded-full transition-all duration-300 ${
+              showShapesSidebar 
+                ? 'bg-green-400 shadow-lg shadow-green-400/50 animate-pulse' 
+                : 'bg-slate-400'
+            }`} />
+            
+            {/* Sparkle effect when active */}
+            {showShapesSidebar && (
+              <Sparkles size={12} className="absolute right-1 top-0.5 text-yellow-300 animate-pulse" />
+            )}
           </button>
-        </div>
 
-        {/* Shape Tools */}
-        <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
-          {tools.filter(t => t.group === 'shape').map((t) => (
+          {/* Basic Tools */}
+          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
+            {tools.filter(t => t.group === 'basic').map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTool(t.id as Tool)}
+                className={`p-2 rounded-lg transition-all ${
+                  tool === t.id
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg'
+                    : 'text-slate-300 hover:bg-slate-600/50'
+                }`}
+                title={t.label}
+              >
+                <t.icon size={18} />
+              </button>
+            ))}
+          </div>
+
+          {/* Drawing Tools */}
+          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
+            {tools.filter(t => t.group === 'draw').map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTool(t.id as Tool)}
+                className={`p-2 rounded-lg transition-all ${
+                  tool === t.id
+                    ? t.id === 'laser' 
+                      ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg shadow-red-500/30'
+                      : t.id === 'highlighter'
+                      ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white shadow-lg shadow-yellow-500/30'
+                      : 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg'
+                    : 'text-slate-300 hover:bg-slate-600/50'
+                }`}
+                title={t.label}
+              >
+                <t.icon size={18} />
+              </button>
+            ))}
             <button
-              key={t.id}
-              onClick={() => setTool(t.id as Tool)}
+              onClick={() => setTool('eraser')}
               className={`p-2 rounded-lg transition-all ${
-                tool === t.id
-                  ? t.id === 'star'
-                    ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg'
-                    : t.id === 'heart'
-                    ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-lg'
-                    : 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg'
+                tool === 'eraser'
+                  ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg'
                   : 'text-slate-300 hover:bg-slate-600/50'
               }`}
-              title={t.label}
+              title="Eraser (E)"
             >
-              <t.icon size={18} />
+              <Eraser size={18} />
             </button>
-          ))}
+          </div>
         </div>
 
-        {/* Insert Tools */}
-        <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
-          {tools.filter(t => t.group === 'insert').map((t) => (
-            <button
-              key={t.id}
-              onClick={() => {
-                if (t.id === 'image') {
-                  fileInputRef.current?.click();
-                } else {
-                  setTool(t.id as Tool);
-                }
-              }}
-              className={`p-2 rounded-lg transition-all ${
-                tool === t.id
-                  ? t.id === 'stickynote'
-                    ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-800 shadow-lg'
-                    : 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg'
-                  : 'text-slate-300 hover:bg-slate-600/50'
-              }`}
-              title={t.label}
-            >
-              <t.icon size={18} />
-            </button>
-          ))}
-        </div>
-
-        {/* Color Quick Select */}
-        <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
-          {colors.slice(0, 6).map((c) => (
-            <button
-              key={c}
-              onClick={() => setColor(c)}
-              className={`relative w-7 h-7 rounded-lg transition-all hover:scale-110 ${
-                color === c ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-700' : ''
-              }`}
-              title={c}
-            >
-              <Paintbrush 
-                size={16} 
-                className="absolute inset-0 m-auto"
-                style={{ color: c === '#000000' ? '#333' : c }}
-                fill={c}
+        {/* Center - Colors and Stroke */}
+        <div className="flex items-center gap-2">
+          {/* Stroke Color */}
+          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
+            <span className="text-xs text-slate-400 px-1">Stroke</span>
+            {colors.slice(0, 8).map((c) => (
+              <button
+                key={c}
+                onClick={() => setColor(c)}
+                className={`w-6 h-6 rounded-md transition-all hover:scale-110 ${
+                  color === c ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-700' : ''
+                }`}
+                style={{ backgroundColor: c }}
+                title={c}
               />
+            ))}
+          </div>
+
+          {/* Background Color */}
+          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
+            <span className="text-xs text-slate-400 px-1">BG</span>
+            {backgroundColors.slice(0, 7).map((c, i) => (
+              <button
+                key={i}
+                onClick={() => setBackgroundColor(c)}
+                className={`w-6 h-6 rounded-md border transition-all hover:scale-110 ${
+                  backgroundColor === c 
+                    ? 'ring-2 ring-cyan-400 ring-offset-1 ring-offset-slate-700 border-cyan-400' 
+                    : 'border-slate-600'
+                }`}
+                style={{ backgroundColor: c }}
+                title={c}
+              />
+            ))}
+          </div>
+
+          {/* Stroke Width */}
+          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
+            {strokeWidths.map((sw) => (
+              <button
+                key={sw.value}
+                onClick={() => setLineWidth(sw.value)}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                  lineWidth === sw.value
+                    ? 'bg-cyan-500 text-white'
+                    : 'text-slate-300 hover:bg-slate-600/50'
+                }`}
+                title={`${sw.label} - ${sw.value}px`}
+              >
+                <div 
+                  className="bg-current rounded-full"
+                  style={{ width: sw.value + 2, height: sw.value + 2 }}
+                />
+              </button>
+            ))}
+          </div>
+
+          {/* Fill toggle for shapes */}
+          {['rectangle', 'circle', 'triangle', 'star', 'heart', 'diamond', 'hexagon'].includes(tool) && (
+            <button
+              onClick={() => setFill(!fill)}
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                fill
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                  : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+              }`}
+            >
+              {fill ? 'Filled' : 'Outline'}
             </button>
-          ))}
+          )}
         </div>
 
-        {/* Fill toggle for shapes */}
-        {['rectangle', 'circle', 'triangle', 'star', 'heart'].includes(tool) && (
+        {/* Right Side - Toggles and Actions */}
+        <div className="flex items-center gap-2">
+          {/* Dark/Light Mode Toggle */}
           <button
-            onClick={() => setFill(!fill)}
-            className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-              fill
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+            onClick={() => {
+              if (!darkMode) {
+                // Switching to dark mode - save current light mode bg
+                lightModeBgRef.current = backgroundColor;
+                setBackgroundColor(darkModeBgRef.current);
+                setColor('#FFFFFF');
+              } else {
+                // Switching to light mode - save current dark mode bg
+                darkModeBgRef.current = backgroundColor;
+                setBackgroundColor(lightModeBgRef.current);
+                setColor('#000000');
+              }
+              setDarkMode(!darkMode);
+            }}
+            className={`p-2 rounded-lg transition-all ${
+              darkMode
+                ? 'bg-slate-700 text-yellow-400'
                 : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
             }`}
+            title={darkMode ? 'Light Mode' : 'Dark Mode'}
           >
-            {fill ? 'Filled' : 'Outline'}
+            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-        )}
 
-        {/* Undo/Redo */}
-        <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
+          {/* Grid Toggle */}
           <button
-            onClick={undo}
-            disabled={undoStack.length === 0}
+            onClick={() => setShowGrid(!showGrid)}
             className={`p-2 rounded-lg transition-all ${
-              undoStack.length > 0
-                ? 'text-slate-300 hover:bg-slate-600/50 hover:text-white'
-                : 'text-slate-600 cursor-not-allowed'
+              showGrid
+                ? 'bg-cyan-500 text-white'
+                : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
             }`}
-            title="Undo (Ctrl+Z)"
+            title="Toggle Grid"
           >
-            <Undo2 size={18} />
+            <Grid3X3 size={18} />
           </button>
-          <button
-            onClick={redo}
-            disabled={redoStack.length === 0}
-            className={`p-2 rounded-lg transition-all ${
-              redoStack.length > 0
-                ? 'text-slate-300 hover:bg-slate-600/50 hover:text-white'
-                : 'text-slate-600 cursor-not-allowed'
-            }`}
-            title="Redo (Ctrl+Y)"
-          >
-            <Redo2 size={18} />
-          </button>
+
+          {/* Undo/Redo */}
+          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
+            <button
+              onClick={undo}
+              disabled={undoStack.length === 0}
+              className={`p-2 rounded-lg transition-all ${
+                undoStack.length > 0
+                  ? 'text-slate-300 hover:bg-slate-600/50 hover:text-white'
+                  : 'text-slate-600 cursor-not-allowed'
+              }`}
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 size={18} />
+            </button>
+            <button
+              onClick={redo}
+              disabled={redoStack.length === 0}
+              className={`p-2 rounded-lg transition-all ${
+                redoStack.length > 0
+                  ? 'text-slate-300 hover:bg-slate-600/50 hover:text-white'
+                  : 'text-slate-600 cursor-not-allowed'
+              }`}
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo2 size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar - Properties */}
-        <div className="w-52 bg-slate-800/50 border-r border-slate-700/50 p-3 space-y-4 overflow-y-auto">
-          {/* Stroke Color */}
-          <div>
-            <label className="text-xs font-medium text-slate-400 mb-2 block">Stroke</label>
-            <div className="flex flex-wrap gap-1.5">
-              {colors.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className={`w-6 h-6 rounded-lg transition-all shadow-sm hover:scale-110 ${
-                    color === c ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-800' : ''
-                  }`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Background Color */}
-          <div>
-            <label className="text-xs font-medium text-slate-400 mb-2 block">Background</label>
-            <div className="flex flex-wrap gap-1.5">
-              {backgroundColors.map((c, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    setBackgroundColor(c);
-                  }}
-                  className={`w-6 h-6 rounded-lg border transition-all hover:scale-110 ${
-                    backgroundColor === c 
-                      ? 'ring-2 ring-cyan-400 ring-offset-1 ring-offset-slate-800 border-cyan-400' 
-                      : 'border-slate-600'
-                  }`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Stroke Width */}
-          <div>
-            <label className="text-xs font-medium text-slate-400 mb-2 block">Stroke width</label>
-            <div className="flex gap-1.5">
-              {strokeWidths.map((sw) => (
-                <button
-                  key={sw.value}
-                  onClick={() => setLineWidth(sw.value)}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    lineWidth === sw.value
-                      ? 'bg-cyan-500 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
-                >
-                  <div className="flex items-center justify-center gap-1">
-                    <div 
-                      className="bg-current rounded-full"
-                      style={{ width: sw.value + 2, height: sw.value + 2 }}
-                    />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Stroke Style */}
-          <div>
-            <label className="text-xs font-medium text-slate-400 mb-2 block">Stroke style</label>
-            <div className="flex gap-1.5">
-              {(['solid', 'dashed', 'dotted'] as const).map((style) => (
-                <button
-                  key={style}
-                  onClick={() => setStrokeStyle(style)}
-                  className={`flex-1 py-2 rounded-lg transition-all ${
-                    strokeStyle === style
-                      ? 'bg-cyan-500 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
-                >
-                  <div className="flex items-center justify-center">
-                    <div 
-                      className={`w-8 border-t-2 ${
-                        style === 'solid' ? 'border-solid' : 
-                        style === 'dashed' ? 'border-dashed' : 'border-dotted'
-                      } border-current`}
-                    />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Opacity */}
-          <div>
-            <label className="text-xs font-medium text-slate-400 mb-2 block">Opacity</label>
-            <div className="flex items-center gap-2">
+        {/* Left Sidebar - Shapes Panel (Like diagrams.net) */}
+        <div 
+          className={`flex-shrink-0 transition-all duration-300 bg-slate-800/50 border-r border-slate-700/50 overflow-hidden ${showShapesSidebar ? 'w-56' : 'w-0'}`}
+        >
+          <div className="w-56 h-full overflow-y-auto p-2">
+            {/* Search */}
+            <div className="mb-3 relative">
               <input
-                type="range"
-                min="0"
-                max="100"
-                value={opacity}
-                onChange={(e) => setOpacity(Number(e.target.value))}
-                className="flex-1 accent-cyan-500"
+                type="text"
+                value={shapeSearch}
+                onChange={(e) => setShapeSearch(e.target.value)}
+                placeholder="🔍 Search shapes..."
+                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-sm text-slate-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50"
               />
-              <span className="text-xs text-slate-300 w-8">{opacity}</span>
+              {shapeSearch && (
+                <button
+                  onClick={() => setShapeSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
-          </div>
 
-          {/* Layers */}
-          <div>
-            <label className="text-xs font-medium text-slate-400 mb-2 block">Layers</label>
-            <div className="text-xs text-slate-500 bg-slate-700/30 rounded-lg p-3 text-center">
-              Coming soon...
-            </div>
+            {/* Search Results */}
+            {shapeSearch && (
+              <div className="mb-3">
+                <div className="text-xs text-slate-400 px-2 mb-2">Search Results</div>
+                <div className="grid grid-cols-4 gap-1 p-2 bg-slate-700/30 rounded-lg">
+                  {shapeCategories
+                    .flatMap(cat => cat.shapes)
+                    .filter((shape, index, self) => 
+                      self.findIndex(s => s.id === shape.id) === index &&
+                      shape.label.toLowerCase().includes(shapeSearch.toLowerCase())
+                    )
+                    .map((shape, idx) => (
+                      <button
+                        key={`search-${shape.id}-${idx}`}
+                        onClick={() => {
+                          if (shape.id === 'image') {
+                            fileInputRef.current?.click();
+                          } else {
+                            setTool(shape.id as Tool);
+                            setSelectedShapeIcon({ icon: shape.icon, label: shape.label });
+                          }
+                          setShapeSearch('');
+                        }}
+                        className={`p-2 rounded-lg border transition-all hover:bg-slate-700/50 ${
+                          tool === shape.id || (selectedShapeIcon?.label === shape.label)
+                            ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
+                            : 'border-slate-600/50 text-slate-400 hover:text-white'
+                        }`}
+                        title={shape.label}
+                      >
+                        <shape.icon size={20} />
+                      </button>
+                    ))
+                  }
+                  {shapeCategories
+                    .flatMap(cat => cat.shapes)
+                    .filter(shape => shape.label.toLowerCase().includes(shapeSearch.toLowerCase())).length === 0 && (
+                    <div className="col-span-4 text-center text-slate-500 text-xs py-2">
+                      No shapes found
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Shape Categories - Show when not searching */}
+            {!shapeSearch && shapeCategories.map((category) => (
+              <div key={category.name} className="mb-2">
+                <button
+                  onClick={() => toggleCategory(category.name)}
+                  className="w-full flex items-center justify-between px-2 py-1.5 text-sm font-medium text-slate-300 hover:bg-slate-700/50 rounded-lg transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronDown 
+                      size={14} 
+                      className={`transition-transform ${expandedCategories.includes(category.name) ? '' : '-rotate-90'}`}
+                    />
+                    {category.name}
+                  </div>
+                </button>
+                
+                {expandedCategories.includes(category.name) && (
+                  <div className="grid grid-cols-4 gap-1 p-2">
+                    {category.shapes.map((shape, idx) => (
+                      <button
+                        key={`${shape.id}-${idx}`}
+                        onClick={() => {
+                          if (shape.id === 'image') {
+                            fileInputRef.current?.click();
+                          } else {
+                            setTool(shape.id as Tool);
+                            setSelectedShapeIcon({ icon: shape.icon, label: shape.label });
+                          }
+                        }}
+                        className={`p-2 rounded-lg border transition-all hover:bg-slate-700/50 ${
+                          tool === shape.id || (selectedShapeIcon?.label === shape.label)
+                            ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
+                            : 'border-slate-600/50 text-slate-400 hover:text-white'
+                        }`}
+                        title={shape.label}
+                      >
+                        <shape.icon size={20} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1573,7 +4909,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           {/* Canvas Container */}
           <div 
             ref={containerRef} 
-            className="flex-1 relative bg-slate-100 overflow-auto"
+            className="flex-1 relative overflow-auto"
             onClick={() => setSelectedImage(null)}
           >
             <div 
@@ -1584,6 +4920,18 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                 height: zoom !== 100 ? `${10000 / zoom}%` : '100%'
               }}
             >
+              {/* Grid Overlay */}
+              {showGrid && (
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    backgroundImage: `linear-gradient(rgba(128,128,128,0.3) 1px, transparent 1px), 
+                                      linear-gradient(90deg, rgba(128,128,128,0.3) 1px, transparent 1px)`,
+                    backgroundSize: '20px 20px',
+                    zIndex: 1
+                  }}
+                />
+              )}
               <canvas
                 ref={canvasRef}
                 onMouseDown={startDrawing}
@@ -1599,6 +4947,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
               <canvas
                 ref={overlayCanvasRef}
                 className="absolute inset-0 pointer-events-none"
+                style={{ zIndex: 2 }}
               />
             </div>
 
@@ -1894,6 +5243,26 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Save Board State */}
+              <button
+                onClick={saveBoardState}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-xs border border-green-500/30 transition-all"
+                title="Save Board State"
+              >
+                <Save size={14} />
+                Save
+              </button>
+
+              {/* Load Board State */}
+              <button
+                onClick={() => boardFileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-xs border border-blue-500/30 transition-all"
+                title="Load Board State"
+              >
+                <FolderOpen size={14} />
+                Load
+              </button>
+
               {/* Export */}
               <button
                 onClick={exportAsImage}
