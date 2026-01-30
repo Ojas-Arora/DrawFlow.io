@@ -4512,12 +4512,12 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       />
 
       {/* Top Toolbar - Reorganized with stroke, background, width */}
-      <div className="bg-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 p-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+      <div className="bg-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 p-1.5 sm:p-2 flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {/* Toggle Shapes Sidebar - Fancy Pill Toggle */}
           <button
             onClick={() => setShowShapesSidebar(!showShapesSidebar)}
-            className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-500 overflow-hidden ${
+            className={`group relative flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full transition-all duration-500 overflow-hidden ${
               showShapesSidebar
                 ? 'bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-500 shadow-lg shadow-purple-500/30'
                 : 'bg-slate-700/80 hover:bg-slate-600/80 border border-slate-500/50'
@@ -4535,7 +4535,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
             </div>
             
             {/* Text label */}
-            <span className={`relative z-10 text-xs font-semibold text-white transition-all duration-300 ${
+            <span className={`relative z-10 text-xs font-semibold text-white transition-all duration-300 hidden sm:block ${
               showShapesSidebar ? 'opacity-100 max-w-20' : 'opacity-0 max-w-0 overflow-hidden'
             }`}>
               Shapes
@@ -4555,30 +4555,30 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           </button>
 
           {/* Basic Tools */}
-          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-700/50 p-0.5 sm:p-1 rounded-lg sm:rounded-xl">
             {tools.filter(t => t.group === 'basic').map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTool(t.id as Tool)}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg transition-all ${
                   tool === t.id
                     ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg'
                     : 'text-slate-300 hover:bg-slate-600/50'
                 }`}
                 title={t.label}
               >
-                <t.icon size={18} />
+                <t.icon size={16} className="sm:w-[18px] sm:h-[18px]" />
               </button>
             ))}
           </div>
 
           {/* Drawing Tools */}
-          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-700/50 p-0.5 sm:p-1 rounded-lg sm:rounded-xl">
             {tools.filter(t => t.group === 'draw').map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTool(t.id as Tool)}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg transition-all ${
                   tool === t.id
                     ? t.id === 'laser' 
                       ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg shadow-red-500/30'
@@ -4589,33 +4589,33 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                 }`}
                 title={t.label}
               >
-                <t.icon size={18} />
+                <t.icon size={16} className="sm:w-[18px] sm:h-[18px]" />
               </button>
             ))}
             <button
               onClick={() => setTool('eraser')}
-              className={`p-2 rounded-lg transition-all ${
+              className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg transition-all ${
                 tool === 'eraser'
                   ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg'
                   : 'text-slate-300 hover:bg-slate-600/50'
               }`}
               title="Eraser (E)"
             >
-              <Eraser size={18} />
+              <Eraser size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
           </div>
         </div>
 
         {/* Center - Colors and Stroke */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {/* Stroke Color */}
-          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
-            <span className="text-xs text-slate-400 px-1">Stroke</span>
-            {colors.slice(0, 8).map((c) => (
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-700/50 p-0.5 sm:p-1 rounded-lg sm:rounded-xl">
+            <span className="text-[10px] sm:text-xs text-slate-400 px-0.5 sm:px-1 hidden md:block">Stroke</span>
+            {colors.slice(0, window.innerWidth < 640 ? 4 : window.innerWidth < 1024 ? 6 : 8).map((c) => (
               <button
                 key={c}
                 onClick={() => setColor(c)}
-                className={`w-6 h-6 rounded-md transition-all hover:scale-110 ${
+                className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md transition-all hover:scale-110 ${
                   color === c ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-700' : ''
                 }`}
                 style={{ backgroundColor: c }}
@@ -4625,13 +4625,13 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           </div>
 
           {/* Background Color */}
-          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
-            <span className="text-xs text-slate-400 px-1">BG</span>
-            {backgroundColors.slice(0, 7).map((c, i) => (
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-700/50 p-0.5 sm:p-1 rounded-lg sm:rounded-xl hidden md:flex">
+            <span className="text-[10px] sm:text-xs text-slate-400 px-0.5 sm:px-1">BG</span>
+            {backgroundColors.slice(0, window.innerWidth < 1024 ? 5 : 7).map((c, i) => (
               <button
                 key={i}
                 onClick={() => setBackgroundColor(c)}
-                className={`w-6 h-6 rounded-md border transition-all hover:scale-110 ${
+                className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md border transition-all hover:scale-110 ${
                   backgroundColor === c 
                     ? 'ring-2 ring-cyan-400 ring-offset-1 ring-offset-slate-700 border-cyan-400' 
                     : 'border-slate-600'
@@ -4643,12 +4643,12 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           </div>
 
           {/* Stroke Width */}
-          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-700/50 p-0.5 sm:p-1 rounded-lg sm:rounded-xl hidden sm:flex">
             {strokeWidths.map((sw) => (
               <button
                 key={sw.value}
                 onClick={() => setLineWidth(sw.value)}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                className={`w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center transition-all ${
                   lineWidth === sw.value
                     ? 'bg-cyan-500 text-white'
                     : 'text-slate-300 hover:bg-slate-600/50'
@@ -4667,7 +4667,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           {['rectangle', 'circle', 'triangle', 'star', 'heart', 'diamond', 'hexagon'].includes(tool) && (
             <button
               onClick={() => setFill(!fill)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-all ${
                 fill
                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                   : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
@@ -4679,7 +4679,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
         </div>
 
         {/* Right Side - Toggles and Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {/* Dark/Light Mode Toggle */}
           <button
             onClick={() => {
@@ -4696,54 +4696,54 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
               }
               setDarkMode(!darkMode);
             }}
-            className={`p-2 rounded-lg transition-all ${
+            className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg transition-all ${
               darkMode
                 ? 'bg-slate-700 text-yellow-400'
                 : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
             }`}
             title={darkMode ? 'Light Mode' : 'Dark Mode'}
           >
-            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            {darkMode ? <Sun size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Moon size={16} className="sm:w-[18px] sm:h-[18px]" />}
           </button>
 
           {/* Grid Toggle */}
           <button
             onClick={() => setShowGrid(!showGrid)}
-            className={`p-2 rounded-lg transition-all ${
+            className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg transition-all hidden sm:block ${
               showGrid
                 ? 'bg-cyan-500 text-white'
                 : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
             }`}
             title="Toggle Grid"
           >
-            <Grid3X3 size={18} />
+            <Grid3X3 size={16} className="sm:w-[18px] sm:h-[18px]" />
           </button>
 
           {/* Undo/Redo */}
-          <div className="flex items-center gap-1 bg-slate-700/50 p-1 rounded-xl">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-700/50 p-0.5 sm:p-1 rounded-lg sm:rounded-xl">
             <button
               onClick={undo}
               disabled={undoStack.length === 0}
-              className={`p-2 rounded-lg transition-all ${
+              className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg transition-all ${
                 undoStack.length > 0
                   ? 'text-slate-300 hover:bg-slate-600/50 hover:text-white'
                   : 'text-slate-600 cursor-not-allowed'
               }`}
               title="Undo (Ctrl+Z)"
             >
-              <Undo2 size={18} />
+              <Undo2 size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
             <button
               onClick={redo}
               disabled={redoStack.length === 0}
-              className={`p-2 rounded-lg transition-all ${
+              className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg transition-all ${
                 redoStack.length > 0
                   ? 'text-slate-300 hover:bg-slate-600/50 hover:text-white'
                   : 'text-slate-600 cursor-not-allowed'
               }`}
               title="Redo (Ctrl+Y)"
             >
-              <Redo2 size={18} />
+              <Redo2 size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
           </div>
         </div>
@@ -4753,17 +4753,17 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Shapes Panel (Like diagrams.net) */}
         <div 
-          className={`flex-shrink-0 transition-all duration-300 bg-slate-800/50 border-r border-slate-700/50 overflow-hidden ${showShapesSidebar ? 'w-56' : 'w-0'}`}
+          className={`flex-shrink-0 transition-all duration-300 bg-slate-800/50 border-r border-slate-700/50 overflow-hidden ${showShapesSidebar ? 'w-40 sm:w-48 lg:w-56' : 'w-0'}`}
         >
-          <div className="w-56 h-full overflow-y-auto p-2">
+          <div className="w-40 sm:w-48 lg:w-56 h-full overflow-y-auto p-1.5 sm:p-2">
             {/* Search */}
-            <div className="mb-3 relative">
+            <div className="mb-2 sm:mb-3 relative">
               <input
                 type="text"
                 value={shapeSearch}
                 onChange={(e) => setShapeSearch(e.target.value)}
-                placeholder="🔍 Search shapes..."
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-sm text-slate-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50"
+                placeholder="🔍 Search..."
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-xs sm:text-sm text-slate-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50"
               />
               {shapeSearch && (
                 <button
@@ -5202,92 +5202,92 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           </div>
 
           {/* Bottom Toolbar */}
-          <div className="bg-slate-800/80 border-t border-slate-700/50 px-3 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="bg-slate-800/80 border-t border-slate-700/50 px-2 sm:px-3 py-1.5 sm:py-2 flex items-center justify-between">
+            <div className="flex items-center gap-1 sm:gap-2">
               {/* Zoom controls */}
-              <div className="flex items-center gap-1 bg-slate-700/50 rounded-lg px-2 py-1">
+              <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-700/50 rounded-lg px-1.5 sm:px-2 py-0.5 sm:py-1">
                 <button 
                   onClick={zoomOut}
                   disabled={zoom <= 25}
-                  className="text-slate-400 hover:text-white p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="text-slate-400 hover:text-white p-0.5 sm:p-1 disabled:opacity-30 disabled:cursor-not-allowed text-sm sm:text-base"
                   title="Zoom Out"
                 >−</button>
-                <span className="text-xs text-slate-300 w-12 text-center">{zoom}%</span>
+                <span className="text-[10px] sm:text-xs text-slate-300 w-8 sm:w-12 text-center">{zoom}%</span>
                 <button 
                   onClick={zoomIn}
                   disabled={zoom >= 200}
-                  className="text-slate-400 hover:text-white p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="text-slate-400 hover:text-white p-0.5 sm:p-1 disabled:opacity-30 disabled:cursor-not-allowed text-sm sm:text-base"
                   title="Zoom In"
                 >+</button>
               </div>
               
-              {/* Undo/Redo */}
-              <div className="flex items-center gap-1 bg-slate-700/50 rounded-lg p-1">
+              {/* Undo/Redo - Hidden on mobile as it's in top bar */}
+              <div className="hidden sm:flex items-center gap-0.5 sm:gap-1 bg-slate-700/50 rounded-lg p-0.5 sm:p-1">
                 <button
                   onClick={undo}
                   disabled={undoStack.length === 0}
-                  className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-1 sm:p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Undo (Ctrl+Z)"
                 >
-                  <Undo2 size={16} />
+                  <Undo2 size={14} className="sm:w-4 sm:h-4" />
                 </button>
                 <button
                   onClick={redo}
                   disabled={redoStack.length === 0}
-                  className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-1 sm:p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Redo (Ctrl+Y)"
                 >
-                  <Redo2 size={16} />
+                  <Redo2 size={14} className="sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               {/* Save Board State */}
               <button
                 onClick={saveBoardState}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-xs border border-green-500/30 transition-all"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-[10px] sm:text-xs border border-green-500/30 transition-all"
                 title="Save Board State"
               >
-                <Save size={14} />
-                Save
+                <Save size={12} className="sm:w-[14px] sm:h-[14px]" />
+                <span className="hidden sm:inline">Save</span>
               </button>
 
               {/* Load Board State */}
               <button
                 onClick={() => boardFileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-xs border border-blue-500/30 transition-all"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-[10px] sm:text-xs border border-blue-500/30 transition-all"
                 title="Load Board State"
               >
-                <FolderOpen size={14} />
-                Load
+                <FolderOpen size={12} className="sm:w-[14px] sm:h-[14px]" />
+                <span className="hidden sm:inline">Load</span>
               </button>
 
               {/* Export */}
               <button
                 onClick={exportAsImage}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-lg text-xs transition-all"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-lg text-[10px] sm:text-xs transition-all"
               >
-                <Download size={14} />
-                Export
+                <Download size={12} className="sm:w-[14px] sm:h-[14px]" />
+                <span className="hidden md:inline">Export</span>
               </button>
 
               {/* Clear */}
               <button
                 onClick={clearCanvas}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs border border-red-500/30 transition-all"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-[10px] sm:text-xs border border-red-500/30 transition-all"
               >
-                <Trash2 size={14} />
-                Clear
+                <Trash2 size={12} className="sm:w-[14px] sm:h-[14px]" />
+                <span className="hidden md:inline">Clear</span>
               </button>
 
               {/* Users */}
               <button
                 onClick={() => setShowUserPanel(!showUserPanel)}
-                className="flex items-center gap-1.5 bg-green-500/20 rounded-lg px-3 py-1.5 border border-green-500/30 hover:bg-green-500/30 transition-all"
+                className="flex items-center gap-1 sm:gap-1.5 bg-green-500/20 rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 border border-green-500/30 hover:bg-green-500/30 transition-all"
               >
-                <Users size={14} className="text-green-400" />
-                <span className="font-semibold text-green-400 text-xs">{activeUserCount}</span>
+                <Users size={12} className="text-green-400 sm:w-[14px] sm:h-[14px]" />
+                <span className="font-semibold text-green-400 text-[10px] sm:text-xs">{activeUserCount}</span>
               </button>
             </div>
           </div>
