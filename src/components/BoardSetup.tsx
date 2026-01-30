@@ -8,13 +8,13 @@ interface BoardSetupProps {
 }
 
 const FeatureCard = ({ icon: Icon, title, description }: { icon: any; title: string; description: string }) => (
-  <div className="flex items-start gap-3 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 hover:bg-white/20 transition-all duration-300">
-    <div className="p-2 bg-white/20 rounded-lg">
-      <Icon size={20} className="text-white" />
+  <div className="flex items-start gap-1.5 md:gap-3 p-2 md:p-4 bg-white/10 backdrop-blur-sm rounded-lg md:rounded-xl border border-white/20 hover:bg-white/20 transition-all duration-300">
+    <div className="p-1 md:p-2 bg-white/20 rounded-md md:rounded-lg">
+      <Icon className="w-3 h-3 md:w-5 md:h-5 text-white" />
     </div>
     <div>
-      <h3 className="font-semibold text-white text-sm">{title}</h3>
-      <p className="text-white/70 text-xs mt-1">{description}</p>
+      <h3 className="font-semibold text-white text-[10px] md:text-sm">{title}</h3>
+      <p className="text-white/70 text-[8px] md:text-xs mt-0.5 md:mt-1">{description}</p>
     </div>
   </div>
 );
@@ -155,38 +155,38 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
   const userColor = getUserColor();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-2 sm:p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-2 md:p-4 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-48 sm:w-72 md:w-96 h-48 sm:h-72 md:h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-1/3 right-1/4 w-48 sm:w-72 md:w-96 h-48 sm:h-72 md:h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-48 sm:w-72 md:w-96 h-48 sm:h-72 md:h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-1/4 left-1/4 w-48 md:w-96 h-48 md:h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-1/3 right-1/4 w-48 md:w-96 h-48 md:h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-48 md:w-96 h-48 md:h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
         
         {/* Grid pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:30px_30px] sm:bg-[size:50px_50px]"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:30px_30px] md:bg-[size:50px_50px]"></div>
       </div>
 
       <div className="w-full max-w-5xl relative z-10">
-        <div className="grid lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 items-center">
+        <div className="grid lg:grid-cols-2 gap-3 md:gap-8 items-center">
           {/* Left side - Hero section */}
-          <div className="text-center lg:text-left space-y-4 sm:space-y-6 order-2 lg:order-1">
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
-              <Zap size={14} className="text-yellow-400 sm:w-4 sm:h-4" />
-              <span className="text-white/90 text-xs sm:text-sm font-medium">Real-time Collaboration</span>
+          <div className="text-center lg:text-left space-y-3 md:space-y-6 order-2 lg:order-1">
+            <div className="inline-flex items-center gap-1.5 md:gap-2 px-2 md:px-4 py-1 md:py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
+              <Zap className="w-3 h-3 md:w-4 md:h-4 text-yellow-400" />
+              <span className="text-white/90 text-[10px] md:text-sm font-medium">Real-time Collaboration</span>
             </div>
             
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">
+            <h1 className="text-2xl md:text-5xl lg:text-6xl font-bold">
               <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 DrawFlow.io
               </span>
             </h1>
             
-            <p className="text-white/70 text-sm sm:text-base lg:text-lg max-w-md mx-auto lg:mx-0">
+            <p className="text-white/70 text-xs md:text-lg max-w-md mx-auto lg:mx-0">
               Draw, write, and collaborate with your team in real-time. Share ideas instantly on an infinite canvas.
             </p>
 
-            {/* Feature cards - hidden on very small screens, shown from sm */}
-            <div className="hidden sm:grid sm:grid-cols-2 gap-2 sm:gap-3 mt-4 sm:mt-8">
+            {/* Feature cards */}
+            <div className="grid grid-cols-2 gap-1.5 md:gap-3 mt-3 md:mt-8">
               <FeatureCard 
                 icon={Palette} 
                 title="Drawing Tools" 
@@ -212,10 +212,10 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
 
           {/* Right side - Form section */}
           <div className="relative order-1 lg:order-2">
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-2xl sm:rounded-3xl blur-xl opacity-30"></div>
-            <div className="relative bg-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 border border-white/20 shadow-2xl max-h-[80vh] overflow-y-auto scrollbar-hide">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl md:rounded-3xl blur-xl opacity-30"></div>
+            <div className="relative bg-white/10 backdrop-blur-xl rounded-xl md:rounded-3xl p-3 md:p-8 border border-white/20 shadow-2xl max-h-[80vh] overflow-y-auto scrollbar-hide">
               {/* Logo */}
-              <div className="flex justify-center mb-4 sm:mb-6">
+              <div className="flex justify-center mb-3 md:mb-6">
                 <div className="relative">
                   <img 
                     src="/logo.png" 
