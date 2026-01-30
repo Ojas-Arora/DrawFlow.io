@@ -4038,9 +4038,12 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     const rect = canvas.getBoundingClientRect();
 
     if ('touches' in e) {
+      // Use changedTouches for touchend, touches for touchstart/touchmove
+      const touch = e.touches[0] || e.changedTouches[0];
+      if (!touch) return { x: 0, y: 0 };
       return {
-        x: e.touches[0].clientX - rect.left,
-        y: e.touches[0].clientY - rect.top,
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top,
       };
     }
 
@@ -4160,8 +4163,12 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     const { x, y } = getCoordinates(e);
     emitCursorPosition(x, y, isDrawing);
+    
+    // Store last position for shape tools
+    lastPosRef.current = { x, y };
     
     if (isDrawing) {
       continueDrawing(e);
@@ -4249,8 +4256,21 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
   const stopDrawing = (e?: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const nonShapeTools = ['select', 'pan', 'pen', 'eraser', 'text', 'highlighter', 'laser', 'stickynote', 'image'];
     const isShapeTool = !nonShapeTools.includes(tool);
-    if (isDrawing && isShapeTool && shapeStartRef.current && e) {
-      const { x, y } = getCoordinates(e);
+    if (isDrawing && isShapeTool && shapeStartRef.current) {
+      // Get coordinates from event or use last known position
+      let endX: number, endY: number;
+      if (e) {
+        const coords = getCoordinates(e);
+        endX = coords.x;
+        endY = coords.y;
+      } else if (lastPosRef.current) {
+        endX = lastPosRef.current.x;
+        endY = lastPosRef.current.y;
+      } else {
+        endX = shapeStartRef.current.x;
+        endY = shapeStartRef.current.y;
+      }
+      
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext('2d');
       
@@ -4259,8 +4279,8 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           type: tool as ShapeData['type'],
           startX: shapeStartRef.current.x,
           startY: shapeStartRef.current.y,
-          endX: x,
-          endY: y,
+          endX,
+          endY,
           color,
           lineWidth,
           strokeStyle,
@@ -4949,7 +4969,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                 onMouseLeave={() => stopDrawing()}
                 onTouchStart={startDrawing}
                 onTouchMove={handleTouchMove}
-                onTouchEnd={() => stopDrawing()}
+                onTouchEnd={stopDrawing}
                 className="absolute inset-0 touch-none"
                 style={{ cursor: getCursor(), backgroundColor }}
               />
@@ -5211,7 +5231,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           </div>
 
           {/* Bottom Toolbar */}
-          <div className="bg-slate-800/80 border-t border-slate-700/50 px-1.5 md:px-3 py-1 md:py-2 flex items-center justify-between overflow-x-auto scrollbar-hide">
+          <div className="bg-slate-800/80 border-t border-slate-700/50 px-1.5 md:px-3 py-1 md:py-2 flex items-center gap-2 md:gap-4 overflow-x-auto scrollbar-hide">
             <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
               {/* Zoom controls */}
               <div className="flex items-center gap-0.5 md:gap-1 bg-slate-700/50 rounded-lg px-1 md:px-2 py-0.5 md:py-1 flex-shrink-0">
