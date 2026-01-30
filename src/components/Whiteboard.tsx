@@ -4777,9 +4777,9 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
 
             {/* Search Results */}
             {shapeSearch && (
-              <div className="mb-3">
-                <div className="text-xs text-slate-400 px-2 mb-2">Search Results</div>
-                <div className="grid grid-cols-4 gap-1 p-2 bg-slate-700/30 rounded-lg">
+              <div className="mb-2 md:mb-3">
+                <div className="text-[10px] md:text-xs text-slate-400 px-1 md:px-2 mb-1 md:mb-2">Search Results</div>
+                <div className="grid grid-cols-4 gap-0.5 md:gap-1 p-1 md:p-2 bg-slate-700/30 rounded-md md:rounded-lg">
                   {shapeCategories
                     .flatMap(cat => cat.shapes)
                     .filter((shape, index, self) => 
@@ -4789,7 +4789,8 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                     .map((shape, idx) => (
                       <button
                         key={`search-${shape.id}-${idx}`}
-                        onClick={() => {
+                        onPointerDown={(e) => {
+                          e.preventDefault();
                           if (shape.id === 'image') {
                             fileInputRef.current?.click();
                           } else {
@@ -4798,14 +4799,14 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                           }
                           setShapeSearch('');
                         }}
-                        className={`p-2 rounded-lg border transition-all hover:bg-slate-700/50 ${
+                        className={`p-1.5 md:p-2 rounded-md md:rounded-lg border transition-all hover:bg-slate-700/50 touch-manipulation active:scale-95 ${
                           tool === shape.id || (selectedShapeIcon?.label === shape.label)
                             ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
                             : 'border-slate-600/50 text-slate-400 hover:text-white'
                         }`}
                         title={shape.label}
                       >
-                        <shape.icon size={20} />
+                        <shape.icon className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
                     ))
                   }
@@ -4822,25 +4823,33 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
 
             {/* Shape Categories - Show when not searching */}
             {!shapeSearch && shapeCategories.map((category) => (
-              <div key={category.name} className="mb-2">
+              <div key={category.name} className="mb-1 md:mb-2">
                 <button
                   onClick={() => toggleCategory(category.name)}
-                  className="w-full flex items-center justify-between px-2 py-1.5 text-sm font-medium text-slate-300 hover:bg-slate-700/50 rounded-lg transition-all"
+                  className="w-full flex items-center justify-between px-1 md:px-2 py-1 md:py-1.5 text-[10px] md:text-sm font-medium text-slate-300 hover:bg-slate-700/50 rounded-md md:rounded-lg transition-all"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 md:gap-2">
                     <ChevronDown 
-                      size={14} 
-                      className={`transition-transform ${expandedCategories.includes(category.name) ? '' : '-rotate-90'}`}
+                      className={`w-3 h-3 md:w-3.5 md:h-3.5 transition-transform ${expandedCategories.includes(category.name) ? '' : '-rotate-90'}`}
                     />
                     {category.name}
                   </div>
                 </button>
                 
                 {expandedCategories.includes(category.name) && (
-                  <div className="grid grid-cols-4 gap-1 p-2">
+                  <div className="grid grid-cols-4 gap-0.5 md:gap-1 p-1 md:p-2">
                     {category.shapes.map((shape, idx) => (
                       <button
                         key={`${shape.id}-${idx}`}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          if (shape.id === 'image') {
+                            fileInputRef.current?.click();
+                          } else {
+                            setTool(shape.id as Tool);
+                            setSelectedShapeIcon({ icon: shape.icon, label: shape.label });
+                          }
+                        }}
                         onClick={() => {
                           if (shape.id === 'image') {
                             fileInputRef.current?.click();
@@ -4849,14 +4858,14 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                             setSelectedShapeIcon({ icon: shape.icon, label: shape.label });
                           }
                         }}
-                        className={`p-2 rounded-lg border transition-all hover:bg-slate-700/50 ${
+                        className={`p-1.5 md:p-2 rounded-md md:rounded-lg border transition-all hover:bg-slate-700/50 touch-manipulation active:scale-95 ${
                           tool === shape.id || (selectedShapeIcon?.label === shape.label)
                             ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400'
                             : 'border-slate-600/50 text-slate-400 hover:text-white'
                         }`}
                         title={shape.label}
                       >
-                        <shape.icon size={20} />
+                        <shape.icon className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
                     ))}
                   </div>
@@ -5202,10 +5211,10 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           </div>
 
           {/* Bottom Toolbar */}
-          <div className="bg-slate-800/80 border-t border-slate-700/50 px-1.5 md:px-3 py-1 md:py-2 flex items-center justify-between">
-            <div className="flex items-center gap-1 md:gap-2">
+          <div className="bg-slate-800/80 border-t border-slate-700/50 px-1.5 md:px-3 py-1 md:py-2 flex items-center justify-between overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
               {/* Zoom controls */}
-              <div className="flex items-center gap-0.5 md:gap-1 bg-slate-700/50 rounded-lg px-1 md:px-2 py-0.5 md:py-1">
+              <div className="flex items-center gap-0.5 md:gap-1 bg-slate-700/50 rounded-lg px-1 md:px-2 py-0.5 md:py-1 flex-shrink-0">
                 <button 
                   onClick={zoomOut}
                   disabled={zoom <= 25}
@@ -5242,7 +5251,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-0.5 md:gap-2">
+            <div className="flex items-center gap-0.5 md:gap-2 flex-shrink-0">
               {/* Save Board State */}
               <button
                 onClick={saveBoardState}

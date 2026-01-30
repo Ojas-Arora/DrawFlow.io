@@ -122,12 +122,14 @@ canvas {
   html {
     font-size: 14px;
   }
-  
-  /* Ensure buttons are tap-friendly */
-  button, 
-  [role="button"] {
-    min-height: 40px;
-  }
+}
+
+/* Touch manipulation for faster click response */
+button, 
+[role="button"],
+a {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Tablet adjustments */

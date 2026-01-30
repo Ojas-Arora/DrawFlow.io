@@ -169,7 +169,7 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
       <div className="w-full max-w-5xl relative z-10">
         <div className="grid lg:grid-cols-2 gap-3 md:gap-8 items-center">
           {/* Left side - Hero section */}
-          <div className="text-center lg:text-left space-y-3 md:space-y-6 order-2 lg:order-1">
+          <div className="text-center lg:text-left space-y-3 md:space-y-6">
             <div className="inline-flex items-center gap-1.5 md:gap-2 px-2 md:px-4 py-1 md:py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
               <Zap className="w-3 h-3 md:w-4 md:h-4 text-yellow-400" />
               <span className="text-white/90 text-[10px] md:text-sm font-medium">Real-time Collaboration</span>
@@ -211,7 +211,7 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
           </div>
 
           {/* Right side - Form section */}
-          <div className="relative order-1 lg:order-2">
+          <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl md:rounded-3xl blur-xl opacity-30"></div>
             <div className="relative bg-white/10 backdrop-blur-xl rounded-xl md:rounded-3xl p-3 md:p-8 border border-white/20 shadow-2xl max-h-[80vh] overflow-y-auto scrollbar-hide">
               {/* Logo */}
@@ -220,55 +220,55 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
                   <img 
                     src="/logo.png" 
                     alt="DrawFlow.io" 
-                    className="w-14 h-14 sm:w-16 md:w-20 sm:h-16 md:h-20 rounded-xl sm:rounded-2xl shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300 object-cover"
+                    className="w-14 h-14 md:w-20 md:h-20 rounded-xl md:rounded-2xl shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300 object-cover"
                   />
-                  <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 sm:border-4 border-slate-900">
+                  <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 w-5 h-5 md:w-8 md:h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-[10px] md:text-xs font-bold border-2 md:border-4 border-slate-900">
                     ✓
                   </div>
                 </div>
               </div>
 
               {/* Username input */}
-              <div className="mb-4 sm:mb-6">
-                <label className="block text-xs sm:text-sm font-semibold text-white/90 mb-1.5 sm:mb-2">👤 Your Display Name</label>
+              <div className="mb-3 md:mb-6">
+                <label className="block text-[10px] md:text-sm font-semibold text-white/90 mb-1 md:mb-2">👤 Your Display Name</label>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your name"
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white/10 border-2 border-white/20 rounded-lg sm:rounded-xl text-white text-sm sm:text-base placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
+                  className="w-full px-2 md:px-4 py-2 md:py-3 bg-white/10 border-2 border-white/20 rounded-lg md:rounded-xl text-white text-xs md:text-base placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
                 />
               </div>
 
               {error && (
-                <div className="bg-red-500/20 border border-red-500/50 p-3 sm:p-4 rounded-lg sm:rounded-xl mb-4 sm:mb-6">
-                  <p className="text-red-200 font-semibold text-xs sm:text-sm">{error}</p>
+                <div className="bg-red-500/20 border border-red-500/50 p-2 md:p-4 rounded-lg md:rounded-xl mb-3 md:mb-6">
+                  <p className="text-red-200 font-semibold text-[10px] md:text-sm">{error}</p>
                 </div>
               )}
 
               {/* Create Board Section */}
-              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <div className="p-1 sm:p-1.5 bg-cyan-500/30 rounded-lg">
-                    <PlusCircle size={16} className="text-cyan-400 sm:w-[18px] sm:h-[18px]" />
+              <div className="space-y-2 md:space-y-4 mb-3 md:mb-6">
+                <h2 className="text-sm md:text-lg font-bold text-white flex items-center gap-1.5 md:gap-2">
+                  <div className="p-1 md:p-1.5 bg-cyan-500/30 rounded-md md:rounded-lg">
+                    <PlusCircle className="w-3.5 h-3.5 md:w-[18px] md:h-[18px] text-cyan-400" />
                   </div>
                   Create New Board
                 </h2>
-                <form onSubmit={createBoard} className="space-y-2.5 sm:space-y-3">
+                <form onSubmit={createBoard} className="space-y-2 md:space-y-3">
                   <input
                     type="text"
                     value={boardName}
                     onChange={(e) => setBoardName(e.target.value)}
                     placeholder="Board name (e.g., Team Brainstorm)"
                     disabled={isLoading}
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white/10 border-2 border-white/20 rounded-lg sm:rounded-xl text-white text-sm sm:text-base placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent disabled:opacity-50 transition-all"
+                    className="w-full px-2 md:px-4 py-2 md:py-3 bg-white/10 border-2 border-white/20 rounded-lg md:rounded-xl text-white text-xs md:text-base placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent disabled:opacity-50 transition-all"
                   />
                   
                   {/* Private Room Toggle */}
-                  <div className="flex items-center justify-between p-2.5 sm:p-3 bg-white/5 rounded-lg sm:rounded-xl border border-white/10">
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <Shield size={16} className={`sm:w-[18px] sm:h-[18px] ${isPrivate ? "text-amber-400" : "text-white/50"}`} />
-                      <span className="text-white/90 text-xs sm:text-sm font-medium">Private Room</span>
+                  <div className="flex items-center justify-between p-2 md:p-3 bg-white/5 rounded-lg md:rounded-xl border border-white/10">
+                    <div className="flex items-center gap-1 md:gap-2">
+                      <Shield className={`w-3.5 h-3.5 md:w-[18px] md:h-[18px] ${isPrivate ? "text-amber-400" : "text-white/50"}`} />
+                      <span className="text-white/90 text-[10px] md:text-sm font-medium">Private Room</span>
                     </div>
                     <button
                       type="button"
@@ -299,14 +299,14 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
                         onChange={(e) => setRoomPassword(e.target.value)}
                         placeholder="Set room password (min 4 chars)"
                         disabled={isLoading}
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-amber-500/10 border-2 border-amber-500/30 rounded-lg sm:rounded-xl text-white text-sm sm:text-base placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent disabled:opacity-50 transition-all"
+                        className="w-full px-2 md:px-4 py-2 md:py-3 pr-8 md:pr-12 bg-amber-500/10 border-2 border-amber-500/30 rounded-lg md:rounded-xl text-white text-xs md:text-base placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent disabled:opacity-50 transition-all"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+                        className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
                       >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showPassword ? <EyeOff className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]" /> : <Eye className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]" />}
                       </button>
                     </div>
                   )}
@@ -314,13 +314,13 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
                   <button
                     type="submit"
                     disabled={!boardName.trim() || !username.trim() || isLoading || (isPrivate && roomPassword.length < 4)}
-                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-white rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-1.5 sm:gap-2 ${
+                    className={`w-full px-2 md:px-4 py-2 md:py-3 text-white rounded-lg md:rounded-xl font-bold text-xs md:text-base hover:shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-1 md:gap-2 ${
                       isPrivate 
                         ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:shadow-amber-500/25' 
                         : 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:shadow-cyan-500/25'
                     }`}
                   >
-                    {isPrivate ? <Lock size={18} /> : <PlusCircle size={18} />}
+                    {isPrivate ? <Lock className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]" /> : <PlusCircle className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]" />}
                     {isLoading ? 'Creating...' : isPrivate ? 'Create Private Board' : 'Create Board'}
                   </button>
                 </form>
@@ -337,35 +337,35 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
               </div>
 
               {/* Join Board Section */}
-              <div className="space-y-3 sm:space-y-4">
-                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <div className="p-1 sm:p-1.5 bg-green-500/30 rounded-lg">
-                    <LogIn size={16} className="text-green-400 sm:w-[18px] sm:h-[18px]" />
+              <div className="space-y-2 md:space-y-4">
+                <h2 className="text-sm md:text-lg font-bold text-white flex items-center gap-1.5 md:gap-2">
+                  <div className="p-1 md:p-1.5 bg-green-500/30 rounded-md md:rounded-lg">
+                    <LogIn className="w-3.5 h-3.5 md:w-[18px] md:h-[18px] text-green-400" />
                   </div>
                   Join Existing Board
                 </h2>
-                <form onSubmit={joinBoard} className="space-y-2.5 sm:space-y-3">
+                <form onSubmit={joinBoard} className="space-y-2 md:space-y-3">
                   <input
                     type="text"
                     value={joinBoardId}
                     onChange={(e) => setJoinBoardId(e.target.value)}
                     placeholder="Paste board ID here"
                     disabled={isLoading}
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white/10 border-2 border-white/20 rounded-lg sm:rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent disabled:opacity-50 transition-all font-mono text-xs sm:text-sm"
+                    className="w-full px-2 md:px-4 py-2 md:py-3 bg-white/10 border-2 border-white/20 rounded-lg md:rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent disabled:opacity-50 transition-all font-mono text-[10px] md:text-sm"
                   />
                   <button
                     type="submit"
                     disabled={!joinBoardId.trim() || !username.trim() || isLoading}
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg sm:rounded-xl font-bold text-sm sm:text-base hover:shadow-lg hover:shadow-green-500/25 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-1.5 sm:gap-2"
+                    className="w-full px-2 md:px-4 py-2 md:py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg md:rounded-xl font-bold text-xs md:text-base hover:shadow-lg hover:shadow-green-500/25 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-1 md:gap-2"
                   >
-                    <LogIn size={16} className="sm:w-[18px] sm:h-[18px]" />
+                    <LogIn className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]" />
                     {isLoading ? 'Joining...' : 'Join Board'}
                   </button>
                 </form>
               </div>
 
               {/* Footer tip */}
-              <p className="text-center text-white/50 text-[10px] sm:text-xs mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-white/10">
+              <p className="text-center text-white/50 text-[8px] md:text-xs mt-3 md:mt-6 pt-2 md:pt-4 border-t border-white/10">
                 💡 Share the Board ID with friends to collaborate in real-time!
                 <br />
                 🔒 Use private rooms for secure group collaboration!
@@ -377,19 +377,19 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
 
       {/* Private Room Password Modal */}
       {pendingPrivateBoard && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-slate-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-md w-full border border-white/20 shadow-2xl">
-            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <div className="p-2 sm:p-3 bg-amber-500/20 rounded-lg sm:rounded-xl">
-                <Lock size={20} className="text-amber-400 sm:w-6 sm:h-6" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 md:p-4">
+          <div className="bg-slate-800 rounded-xl md:rounded-2xl p-3 md:p-6 max-w-md w-full border border-white/20 shadow-2xl">
+            <div className="flex items-center gap-1.5 md:gap-3 mb-2 md:mb-4">
+              <div className="p-1.5 md:p-3 bg-amber-500/20 rounded-lg md:rounded-xl">
+                <Lock className="w-4 h-4 md:w-6 md:h-6 text-amber-400" />
               </div>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white">Private Room</h3>
-                <p className="text-white/60 text-xs sm:text-sm">{pendingPrivateBoard.title}</p>
+                <h3 className="text-base md:text-xl font-bold text-white">Private Room</h3>
+                <p className="text-white/60 text-[10px] md:text-sm">{pendingPrivateBoard.title}</p>
               </div>
             </div>
             
-            <p className="text-white/70 text-xs sm:text-sm mb-3 sm:mb-4">
+            <p className="text-white/70 text-[10px] md:text-sm mb-2 md:mb-4">
               This board is protected. Enter the password to join.
             </p>
 
