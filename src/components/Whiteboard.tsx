@@ -212,14 +212,38 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
   // Store background colors for light/dark mode switching
   const lightModeBgRef = useRef('#FFFFFF');
   const darkModeBgRef = useRef('#1a1a2e');
+  
+  // Store canvas image data for zoom (preserves exact visual state including eraser)
+  const canvasImageDataRef = useRef<ImageData | null>(null);
+  const baseZoomRef = useRef(100); // The zoom level at which canvasImageDataRef was captured
 
   const zoomIn = useCallback(() => {
-    setZoom(prev => Math.min(prev + 25, 200));
-  }, []);
+    // Save current canvas state before zoom
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (canvas && ctx) {
+      canvasImageDataRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      baseZoomRef.current = zoom;
+    }
+    setZoom(prev => {
+      const newZoom = Math.min(prev + 25, 200);
+      return newZoom;
+    });
+  }, [zoom]);
 
   const zoomOut = useCallback(() => {
-    setZoom(prev => Math.max(prev - 25, 25));
-  }, []);
+    // Save current canvas state before zoom
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (canvas && ctx) {
+      canvasImageDataRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      baseZoomRef.current = zoom;
+    }
+    setZoom(prev => {
+      const newZoom = Math.max(prev - 25, 25);
+      return newZoom;
+    });
+  }, [zoom]);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => 
@@ -3925,19 +3949,21 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       const ctx = canvas?.getContext('2d');
       if (!ctx || !canvas) return;
 
+      // Clear and fill background
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = backgroundColorRef.current;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
 
+      // Draw history at base scale (zoom=100%) - zoom will be applied via ImageData scaling
       let lastBgColor = backgroundColorRef.current;
       drawingEvents?.forEach((event: { eventType: string; data: ShapeData | TextData | { x: number; y: number; prevX: number; prevY: number; color: string; lineWidth: number; opacity?: number; backgroundColor?: string } }) => {
         if (event.eventType === 'clear') {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          // For history loading, don't clear - just track bg color
           const clearData = event.data as { backgroundColor?: string };
           const bgColor = clearData?.backgroundColor || lastBgColor;
           lastBgColor = bgColor;
-          ctx.fillStyle = bgColor;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
           // Update state if history has a different background
           if (clearData?.backgroundColor) {
             setBackgroundColor(clearData.backgroundColor);
@@ -3955,10 +3981,60 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           }
         }
       });
+      
+      // Reset zoom to 100% after loading history
+      setZoom(100);
+      baseZoomRef.current = 100;
+      canvasImageDataRef.current = null;
     } catch (error) {
       console.error('Error loading drawing history:', error);
     }
   }, [boardId, draw, drawShape, drawText]);
+
+  // Redraw when zoom changes using ImageData scaling (preserves exact canvas state including eraser)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx || !canvasImageDataRef.current) return;
+    
+    const imageData = canvasImageDataRef.current;
+    const prevZoom = baseZoomRef.current;
+    const newZoom = zoom;
+    
+    // Calculate relative scale
+    const relativeScale = newZoom / prevZoom;
+    
+    // Create a temporary canvas to hold the image
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    if (!tempCtx) return;
+    
+    // Put the saved image data on temp canvas
+    tempCtx.putImageData(imageData, 0, 0);
+    
+    // Clear main canvas and fill with background
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = backgroundColorRef.current;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw the temp canvas scaled from center
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.scale(relativeScale, relativeScale);
+    ctx.translate(-centerX, -centerY);
+    ctx.drawImage(tempCanvas, 0, 0);
+    ctx.restore();
+    
+    // Update the base reference for next zoom
+    canvasImageDataRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    baseZoomRef.current = newZoom;
+    
+  }, [zoom]);
 
   // Export canvas as image
   const exportAsImage = useCallback(() => {
@@ -4195,8 +4271,13 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       if (!container) return;
       
       const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left - imageDragOffset.x;
-      const y = e.clientY - rect.top - imageDragOffset.y;
+      const zoomFactor = zoom / 100;
+      const centerOffsetX = (rect.width * (1 - zoomFactor)) / 2;
+      const centerOffsetY = (rect.height * (1 - zoomFactor)) / 2;
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      const x = (screenX - centerOffsetX) / zoomFactor - imageDragOffset.x;
+      const y = (screenY - centerOffsetY) / zoomFactor - imageDragOffset.y;
 
       setPlacedImages(prev => prev.map(img => 
         img.id === draggingImage 
@@ -4216,7 +4297,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [draggingImage, imageDragOffset]);
+  }, [draggingImage, imageDragOffset, zoom]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -4240,6 +4321,18 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
         } else if (e.key === 'y') {
           e.preventDefault();
           redo();
+        } else if (e.key === '=' || e.key === '+') {
+          // Ctrl + Plus for zoom in
+          e.preventDefault();
+          zoomIn();
+        } else if (e.key === '-' || e.key === '_') {
+          // Ctrl + Minus for zoom out
+          e.preventDefault();
+          zoomOut();
+        } else if (e.key === '0') {
+          // Ctrl + 0 for reset zoom
+          e.preventDefault();
+          setZoom(100);
         }
       }
       
@@ -4276,7 +4369,28 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, textInput.visible, selectedImage, deleteSelectedImage]);
+  }, [undo, redo, textInput.visible, selectedImage, deleteSelectedImage, zoomIn, zoomOut]);
+
+  // Mouse wheel zoom
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Only zoom when Ctrl key is held
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+          zoomIn();
+        } else {
+          zoomOut();
+        }
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [zoomIn, zoomOut]);
 
   // Sticky note dragging
   useEffect(() => {
@@ -4287,8 +4401,13 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       if (!container) return;
       
       const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left - dragOffset.x;
-      const y = e.clientY - rect.top - dragOffset.y;
+      const zoomFactor = zoom / 100;
+      const centerOffsetX = (rect.width * (1 - zoomFactor)) / 2;
+      const centerOffsetY = (rect.height * (1 - zoomFactor)) / 2;
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      const x = (screenX - centerOffsetX) / zoomFactor - dragOffset.x;
+      const y = (screenY - centerOffsetY) / zoomFactor - dragOffset.y;
 
       setStickyNotes(prev => prev.map(note => 
         note.id === draggingStickyNote 
@@ -4312,7 +4431,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [draggingStickyNote, dragOffset, stickyNotes, boardId]);
+  }, [draggingStickyNote, dragOffset, stickyNotes, boardId, zoom]);
 
   // Socket connection and event handlers
   useEffect(() => {
@@ -4330,26 +4449,64 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     socket.on('draw', (data) => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext('2d');
-      if (!ctx) return;
+      if (!ctx || !canvas) return;
 
       const { x, y, prevX, prevY, color: eventColor, lineWidth: eventWidth, opacity: eventOpacity } = data;
       if (x !== undefined && y !== undefined && prevX !== undefined && prevY !== undefined) {
+        // Apply zoom transform
+        const zoomFactor = zoom / 100;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.scale(zoomFactor, zoomFactor);
+        ctx.translate(-centerX, -centerY);
+        
         draw(ctx, x, y, prevX, prevY, eventColor || '#000000', eventWidth || 2, eventOpacity || 100);
+        
+        ctx.restore();
       }
     });
 
     socket.on('shape', (data: ShapeData) => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext('2d');
-      if (!ctx) return;
+      if (!ctx || !canvas) return;
+      
+      // Apply zoom transform
+      const zoomFactor = zoom / 100;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.scale(zoomFactor, zoomFactor);
+      ctx.translate(-centerX, -centerY);
+      
       drawShape(ctx, data);
+      
+      ctx.restore();
     });
 
     socket.on('text', (data: TextData) => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext('2d');
-      if (!ctx) return;
+      if (!ctx || !canvas) return;
+      
+      // Apply zoom transform
+      const zoomFactor = zoom / 100;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.scale(zoomFactor, zoomFactor);
+      ctx.translate(-centerX, -centerY);
+      
       drawText(ctx, data);
+      
+      ctx.restore();
     });
 
     socket.on('clear-board', (data: { backgroundColor?: string }) => {
@@ -4365,6 +4522,9 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
         setBackgroundColor(data.backgroundColor);
         backgroundColorRef.current = data.backgroundColor;
       }
+      
+      // Clear stored ImageData on board clear
+      canvasImageDataRef.current = null;
     });
 
     socket.on('cursor-update', (data: { odId: string; username: string; color: string; x: number; y: number; isDrawing: boolean; tool?: string }) => {
@@ -4415,7 +4575,17 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     socket.on('highlight', (data: { x: number; y: number; prevX: number; prevY: number; color: string }) => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext('2d');
-      if (!ctx) return;
+      if (!ctx || !canvas) return;
+
+      // Apply zoom transform
+      const zoomFactor = zoom / 100;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.scale(zoomFactor, zoomFactor);
+      ctx.translate(-centerX, -centerY);
 
       ctx.beginPath();
       ctx.moveTo(data.prevX, data.prevY);
@@ -4427,6 +4597,8 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       ctx.globalAlpha = 0.3;
       ctx.stroke();
       ctx.globalAlpha = 1;
+      
+      ctx.restore();
     });
 
     socket.on('cursor-remove', (data: { odId: string }) => {
@@ -4505,22 +4677,33 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
 
-    const rect = canvas.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    const zoomFactor = zoom / 100;
+    
+    // Canvas center (zoom origin)
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
 
     if ('touches' in e) {
-      // Use changedTouches for touchend, touches for touchstart/touchmove
       const touch = e.touches[0] || e.changedTouches[0];
       if (!touch) return { x: 0, y: 0 };
-      return {
-        x: touch.clientX - rect.left,
-        y: touch.clientY - rect.top,
-      };
+      // Screen position relative to canvas
+      const screenX = (touch.clientX - canvasRect.left) * (canvas.width / canvasRect.width);
+      const screenY = (touch.clientY - canvasRect.top) * (canvas.height / canvasRect.height);
+      // Convert from zoomed coordinates to logical coordinates
+      // Reverse the transform: translate(-center), scale(1/zoom), translate(center)
+      const logicalX = (screenX - centerX) / zoomFactor + centerX;
+      const logicalY = (screenY - centerY) / zoomFactor + centerY;
+      return { x: logicalX, y: logicalY };
     }
 
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
+    // Screen position relative to canvas
+    const screenX = (e.clientX - canvasRect.left) * (canvas.width / canvasRect.width);
+    const screenY = (e.clientY - canvasRect.top) * (canvas.height / canvasRect.height);
+    // Convert from zoomed coordinates to logical coordinates
+    const logicalX = (screenX - centerX) / zoomFactor + centerX;
+    const logicalY = (screenY - centerY) / zoomFactor + centerY;
+    return { x: logicalX, y: logicalY };
   };
 
   const emitCursorPosition = useCallback((x: number, y: number, drawing: boolean) => {
@@ -4580,6 +4763,17 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
         const ctx = overlayCanvas?.getContext('2d');
         if (ctx && overlayCanvas) {
           ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+          
+          // Apply zoom transform to overlay
+          const zoomFactor = zoom / 100;
+          const centerX = overlayCanvas.width / 2;
+          const centerY = overlayCanvas.height / 2;
+          
+          ctx.save();
+          ctx.translate(centerX, centerY);
+          ctx.scale(zoomFactor, zoomFactor);
+          ctx.translate(-centerX, -centerY);
+          
           drawShape(ctx, {
             type: tool as ShapeData['type'],
             startX: shapeStartRef.current.x,
@@ -4594,6 +4788,8 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
             fillColor: color,
             techLogoId: (tool === 'icon' && selectedShapeIcon?.id) ? selectedShapeIcon.id : undefined,
           });
+          
+          ctx.restore();
         }
       } else if (tool === 'highlighter') {
         // Highlighter - semi-transparent wide stroke
@@ -4612,9 +4808,19 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+    if (!ctx || !canvas) return;
 
     const { x, y } = getCoordinates(e);
+    
+    // Apply zoom transform
+    const zoomFactor = zoom / 100;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.scale(zoomFactor, zoomFactor);
+    ctx.translate(-centerX, -centerY);
     
     ctx.beginPath();
     ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
@@ -4626,6 +4832,8 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     ctx.globalAlpha = 0.3;
     ctx.stroke();
     ctx.globalAlpha = 1;
+    
+    ctx.restore();
 
     // Throttle socket emit to reduce network load (every 16ms ~ 60fps)
     const now = Date.now();
@@ -4706,12 +4914,22 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
 
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+    if (!ctx || !canvas) return;
 
     const { x, y } = getCoordinates(e);
     const currentColor = tool === 'eraser' ? backgroundColor : color;
     const currentWidth = tool === 'eraser' ? 20 : tool === 'highlighter' ? 20 : lineWidth;
     const currentOpacity = tool === 'highlighter' ? 30 : opacity;
+
+    // Apply zoom transform
+    const zoomFactor = zoom / 100;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.scale(zoomFactor, zoomFactor);
+    ctx.translate(-centerX, -centerY);
 
     if (tool === 'highlighter') {
       ctx.globalAlpha = 0.3;
@@ -4720,6 +4938,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     draw(ctx, x, y, lastPosRef.current.x, lastPosRef.current.y, currentColor, currentWidth, currentOpacity);
     
     ctx.globalAlpha = 1;
+    ctx.restore();
 
     // Throttle socket emit to reduce network load (every 16ms ~ 60fps)
     const now = Date.now();
@@ -4762,7 +4981,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext('2d');
       
-      if (ctx) {
+      if (ctx && canvas) {
         const shapeData: ShapeData = {
           type: tool as ShapeData['type'],
           startX: shapeStartRef.current.x,
@@ -4778,7 +4997,19 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           techLogoId: (tool === 'icon' && selectedShapeIcon?.id) ? selectedShapeIcon.id : undefined,
         };
         
+        // Apply zoom transform
+        const zoomFactor = zoom / 100;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.scale(zoomFactor, zoomFactor);
+        ctx.translate(-centerX, -centerY);
+        
         drawShape(ctx, shapeData);
+        
+        ctx.restore();
 
         if (socketRef.current) {
           socketRef.current.emit('shape', {
@@ -4820,7 +5051,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
 
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
+    if (!ctx || !canvas) return;
 
     const textData: TextData = {
       x: textInput.x,
@@ -4830,7 +5061,19 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       fontSize: lineWidth * 6 + 12,
     };
 
+    // Apply zoom transform
+    const zoomFactor = zoom / 100;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.scale(zoomFactor, zoomFactor);
+    ctx.translate(-centerX, -centerY);
+    
     drawText(ctx, textData);
+    
+    ctx.restore();
 
     if (socketRef.current) {
       socketRef.current.emit('text', {
@@ -4853,6 +5096,9 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Clear stored ImageData
+    canvasImageDataRef.current = null;
 
     if (socketRef.current) {
       socketRef.current.emit('clear-board', { boardId, backgroundColor });
@@ -5569,16 +5815,11 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           {/* Canvas Container */}
           <div 
             ref={containerRef} 
-            className="flex-1 relative overflow-auto"
+            className="flex-1 relative overflow-hidden"
             onClick={() => setSelectedImage(null)}
           >
             <div 
-              style={{ 
-                transform: `scale(${zoom / 100})`, 
-                transformOrigin: 'top left',
-                width: zoom !== 100 ? `${10000 / zoom}%` : '100%',
-                height: zoom !== 100 ? `${10000 / zoom}%` : '100%'
-              }}
+              className="absolute inset-0"
             >
               {/* Grid Overlay */}
               {showGrid && (
@@ -5601,47 +5842,59 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                 onTouchStart={startDrawing}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={stopDrawing}
-                className="absolute inset-0 touch-none"
+                className="absolute inset-0 w-full h-full touch-none"
                 style={{ cursor: getCursor(), backgroundColor }}
               />
               <canvas
                 ref={overlayCanvasRef}
-                className="absolute inset-0 pointer-events-none"
+                className="absolute inset-0 w-full h-full pointer-events-none"
                 style={{ zIndex: 2 }}
               />
+
+              {/* Text Input - inside scaled container */}
+              {textInput.visible && (
+                <input
+                  type="text"
+                  value={textValue}
+                  onChange={(e) => setTextValue(e.target.value)}
+                  onBlur={handleTextSubmit}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleTextSubmit();
+                    if (e.key === 'Escape') setTextInput({ ...textInput, visible: false });
+                  }}
+                  className="absolute bg-transparent border-none outline-none"
+                  style={{
+                    left: textInput.x,
+                    top: textInput.y - 10,
+                    color: color,
+                    fontSize: lineWidth * 6 + 12,
+                    zIndex: 10,
+                  }}
+                  autoFocus
+                />
+              )}
             </div>
 
-            {/* Text Input */}
-            {textInput.visible && (
-              <input
-                type="text"
-                value={textValue}
-                onChange={(e) => setTextValue(e.target.value)}
-                onBlur={handleTextSubmit}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleTextSubmit();
-                  if (e.key === 'Escape') setTextInput({ ...textInput, visible: false });
-                }}
-                className="absolute bg-transparent border-none outline-none"
-                style={{
-                  left: textInput.x,
-                  top: textInput.y - 10,
-                  color: color,
-                  fontSize: lineWidth * 6 + 12,
-                }}
-                autoFocus
-              />
-            )}
-            
-            {/* Remote Cursors */}
-            {Array.from(remoteCursors.values()).map((cursor) => (
-              cursor.x >= 0 && cursor.y >= 0 && (
+            {/* Remote Cursors - outside scaled container for consistent size */}
+            {Array.from(remoteCursors.values()).map((cursor) => {
+              // Calculate zoom-adjusted position from center of container
+              const zoomFactor = zoom / 100;
+              const container = containerRef.current;
+              const containerWidth = container?.clientWidth || 0;
+              const containerHeight = container?.clientHeight || 0;
+              const centerX = containerWidth / 2;
+              const centerY = containerHeight / 2;
+              // Transform position: scale from center
+              const adjustedX = centerX + (cursor.x - centerX) * zoomFactor;
+              const adjustedY = centerY + (cursor.y - centerY) * zoomFactor;
+              
+              return cursor.x >= 0 && cursor.y >= 0 && (
                 <div
                   key={cursor.odId}
                   className="absolute pointer-events-none transition-all duration-75 ease-out z-50"
                   style={{
-                    left: cursor.x,
-                    top: cursor.y,
+                    left: adjustedX,
+                    top: adjustedY,
                     transform: 'translate(-2px, -2px)',
                   }}
                 >
@@ -5662,8 +5915,8 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                     {cursor.isDrawing && ' ✏️'}
                   </div>
                 </div>
-              )
-            ))}
+              );
+            })}
 
             {/* Laser Pointer Effects */}
             {laserPoints.map((point, index) => {
@@ -5671,13 +5924,23 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
               const fadeOpacity = Math.max(0, 1 - age / 800);
               const scale = 1 + (age / 800) * 0.5;
               
+              // Calculate zoom-adjusted position from center of container
+              const zoomFactor = zoom / 100;
+              const container = containerRef.current;
+              const containerWidth = container?.clientWidth || 0;
+              const containerHeight = container?.clientHeight || 0;
+              const centerX = containerWidth / 2;
+              const centerY = containerHeight / 2;
+              const adjustedX = centerX + (point.x - centerX) * zoomFactor;
+              const adjustedY = centerY + (point.y - centerY) * zoomFactor;
+              
               return (
                 <div
                   key={`${point.odId}-${index}`}
                   className="absolute pointer-events-none z-40"
                   style={{
-                    left: point.x,
-                    top: point.y,
+                    left: adjustedX,
+                    top: adjustedY,
                     transform: `translate(-50%, -50%) scale(${scale})`,
                     opacity: fadeOpacity,
                   }}
@@ -5714,26 +5977,39 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
             })}
 
             {/* Sticky Notes */}
-            {stickyNotes.map((note) => (
+            {stickyNotes.map((note) => {
+              // Calculate zoom-adjusted position from center of container
+              const zoomFactor = zoom / 100;
+              const container = containerRef.current;
+              const containerWidth = container?.clientWidth || 0;
+              const containerHeight = container?.clientHeight || 0;
+              const centerX = containerWidth / 2;
+              const centerY = containerHeight / 2;
+              const adjustedX = centerX + (note.x - centerX) * zoomFactor;
+              const adjustedY = centerY + (note.y - centerY) * zoomFactor;
+              
+              return (
               <div
                 key={note.id}
                 className={`absolute shadow-lg rounded select-none ${draggingStickyNote === note.id ? 'cursor-grabbing' : 'cursor-grab'}`}
                 style={{
-                  left: note.x,
-                  top: note.y,
+                  left: adjustedX,
+                  top: adjustedY,
                   width: note.width,
                   minHeight: note.height,
                   backgroundColor: note.color,
                   zIndex: draggingStickyNote === note.id ? 50 : 30,
                   transition: draggingStickyNote === note.id ? 'none' : 'box-shadow 0.2s',
                   boxShadow: draggingStickyNote === note.id ? '0 10px 40px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.15)',
+                  transform: `scale(${zoomFactor})`,
+                  transformOrigin: 'top left',
                 }}
                 onMouseDown={(e) => {
                   if ((e.target as HTMLElement).tagName === 'TEXTAREA' || (e.target as HTMLElement).tagName === 'BUTTON') return;
                   e.preventDefault();
                   setDraggingStickyNote(note.id);
                   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                  setDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+                  setDragOffset({ x: (e.clientX - rect.left) / zoomFactor, y: (e.clientY - rect.top) / zoomFactor });
                 }}
               >
                 {/* Drag handle */}
@@ -5803,18 +6079,30 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
 
             {/* Placed Images */}
-            {placedImages.map((img) => (
+            {placedImages.map((img) => {
+              // Calculate zoom-adjusted position from center of container
+              const zoomFactor = zoom / 100;
+              const container = containerRef.current;
+              const containerWidth = container?.clientWidth || 0;
+              const containerHeight = container?.clientHeight || 0;
+              const centerX = containerWidth / 2;
+              const centerY = containerHeight / 2;
+              const adjustedX = centerX + (img.x - centerX) * zoomFactor;
+              const adjustedY = centerY + (img.y - centerY) * zoomFactor;
+              
+              return (
               <div
                 key={img.id}
                 className={`absolute ${draggingImage === img.id ? 'cursor-grabbing' : 'cursor-move'} ${selectedImage === img.id ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-transparent' : ''}`}
                 style={{
-                  left: img.x,
-                  top: img.y,
-                  width: img.width,
-                  height: img.height,
+                  left: adjustedX,
+                  top: adjustedY,
+                  width: img.width * zoomFactor,
+                  height: img.height * zoomFactor,
                   zIndex: draggingImage === img.id ? 50 : 25,
                   transition: draggingImage === img.id ? 'none' : 'box-shadow 0.2s',
                 }}
@@ -5828,7 +6116,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                   setSelectedImage(img.id);
                   setDraggingImage(img.id);
                   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                  setImageDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+                  setImageDragOffset({ x: (e.clientX - rect.left) / zoomFactor, y: (e.clientY - rect.top) / zoomFactor });
                 }}
               >
                 <img
@@ -5858,7 +6146,8 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                   </>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Bottom Toolbar */}
