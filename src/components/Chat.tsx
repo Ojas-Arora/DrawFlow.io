@@ -4,6 +4,7 @@ import { getUserId, getUsername, getUserColor } from '../lib/userSession';
 import { getSocket } from '../lib/socket';
 
 interface ChatMessage {
+  odId?: string;
   userId: string;
   username: string;
   message: string;
@@ -13,10 +14,11 @@ interface ChatMessage {
 
 interface ChatProps {
   boardId: string;
+  messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }
 
-export default function Chat({ boardId }: ChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export default function Chat({ boardId, messages, setMessages }: ChatProps) {
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -31,18 +33,8 @@ export default function Chat({ boardId }: ChatProps) {
   }, [messages]);
 
   useEffect(() => {
-    // Initialize socket connection for real-time chat
+    // Initialize socket connection for sending messages only
     socketRef.current = getSocket();
-    const socket = socketRef.current;
-
-    // Listen for incoming messages (real-time only, no history)
-    socket.on('chat-message', (message: ChatMessage) => {
-      setMessages((prev) => [...prev, message]);
-    });
-
-    return () => {
-      socket.off('chat-message');
-    };
   }, [boardId]);
 
   const sendMessage = (e: React.FormEvent) => {

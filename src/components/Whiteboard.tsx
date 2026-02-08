@@ -27,7 +27,12 @@ import {
   Table, List, ListOrdered, TreePine, Network, Binary, Braces, Hash,
   Package, Component, Boxes, Link2, Unlink, ArrowLeftRight, Merge, Split,
   GitCommit, GitMerge, GitPullRequest, Bug, CheckCheck, XOctagon,
-  CircleDot, SquareDot, Dot, Grip, Move
+  CircleDot, SquareDot, Dot, Grip, Move,
+  // Cloud & DevOps icons
+  CloudCog, Container, CloudOff, CloudUpload, CloudDownload,
+  CloudLightning, Cog, Wrench, Hammer, Factory, Gauge, Radio, 
+  Router, Cable, PlugZap, Power, Battery, BatteryCharging,
+  Scale, Webhook, Blocks
 } from 'lucide-react';
 import { getUserId, getUsername, getUserColor } from '../lib/userSession';
 import { getSocket } from '../lib/socket';
@@ -63,7 +68,19 @@ type Tool = 'select' | 'pan' | 'pen' | 'eraser' | 'rectangle' | 'circle' | 'line
 // UML
 'class' | 'interface' | 'package' | 'object' | 'composition' | 'actor' | 'lifeline' | 'activation' | 'message' | 'loop' | 'altfragment' |
 // ER
-'entity' | 'relationship' | 'attribute' | 'primarykey' | 'foreignkey' | 'table';
+'entity' | 'relationship' | 'attribute' | 'primarykey' | 'foreignkey' | 'table' |
+// Cloud & DevOps
+'aws' | 'azure' | 'gcp' | 'docker' | 'kubernetes' | 'terraform' | 'jenkins' | 'cicd' | 'ansible' | 'prometheus' | 'grafana' | 'nginx' | 'redis' | 'mongodb' | 'postgresql' | 'mysql' | 'elasticsearch' | 'kafka' | 'rabbitmq' | 'vault' | 'consul' | 'istio' | 'helm' | 'argocd' |
+// AWS Services
+'lambda' | 's3bucket' | 'ec2' | 'rds' | 'vpc' | 'apigateway' | 'cloudwatch' | 'sns' | 'sqs' | 'elasticache' | 'cloudfront' | 'route53' | 'ecs' | 'eks' | 'fargate' | 'dynamodb' | 'redshift' | 'kinesis' | 'stepfunction' | 'cognitouser' | 'iam' | 'secretsmanager' | 'eventbridge' | 'amplify' | 'athena' | 'glue' | 'emr' | 'sagemaker' | 'codepipeline' | 'codebuild' | 'codecommit' | 'codedeploy' | 'elasticbeanstalk' | 'lightsail' | 'apprunner' | 'batch' |
+// Azure Services
+'azurevm' | 'azureblobstorage' | 'azurefunctions' | 'azuresql' | 'cosmosdb' | 'azurevnet' | 'azureapim' | 'azuremonitor' | 'azureservicebus' | 'azureeventhubs' | 'azurecdn' | 'azuredns' | 'aks' | 'azurecontainerinstances' | 'azuresynapse' | 'azuredatafactory' | 'azuread' | 'azurekeyvault' | 'azurelogicapps' | 'azuredevops' | 'azureappservice' | 'azurefrontdoor' | 'azureml' | 'azurecognitiveservices' | 'azureiot' | 'azurenotificationhubs' | 'azuresignalr' | 'azuremediaservices' |
+// Google Cloud
+'computeengine' | 'cloudstorage' | 'cloudfunctions' | 'cloudsql' | 'bigquery' | 'gcpvpc' | 'apigee' | 'cloudmonitoring' | 'pubsub' | 'cloudcdn' | 'clouddns' | 'gke' | 'cloudrun' | 'dataflow' | 'dataproc' | 'gcpiam' | 'secretmanager' | 'cloudscheduler' | 'cloudbuild' | 'cloudsourcerepos' | 'appengine' | 'firestore' | 'firebase' | 'vertexai' | 'gcpiot' | 'memorystore' | 'spanner' | 'bigtable' |
+// Networking
+'router' | 'switch' | 'gateway' | 'dns' | 'cdn' | 'vpn' | 'proxy' | 'nat' | 'waf' | 'ddos' |
+// Databases
+'sqldb' | 'nosqldb' | 'graphdb' | 'timeseries' | 'cachedb' | 'datawarehouse' | 'datalake' | 'replication' | 'sharding' | 'backup';
 
 interface WhiteboardProps {
   boardId: string;
@@ -451,6 +468,174 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
         { id: 'compass', icon: Compass, label: 'Compass' },
       ]
     },
+    {
+      name: 'Cloud & DevOps',
+      shapes: [
+        { id: 'aws', icon: Cloud, label: 'AWS' },
+        { id: 'azure', icon: CloudCog, label: 'Azure' },
+        { id: 'gcp', icon: CloudLightning, label: 'GCP' },
+        { id: 'docker', icon: Container, label: 'Docker' },
+        { id: 'kubernetes', icon: Boxes, label: 'Kubernetes' },
+        { id: 'terraform', icon: Blocks, label: 'Terraform' },
+        { id: 'jenkins', icon: Cog, label: 'Jenkins' },
+        { id: 'cicd', icon: Workflow, label: 'CI/CD' },
+        { id: 'ansible', icon: Settings, label: 'Ansible' },
+        { id: 'prometheus', icon: Activity, label: 'Prometheus' },
+        { id: 'grafana', icon: BarChart3, label: 'Grafana' },
+        { id: 'nginx', icon: Server, label: 'Nginx' },
+        { id: 'redis', icon: Database, label: 'Redis' },
+        { id: 'mongodb', icon: Database, label: 'MongoDB' },
+        { id: 'postgresql', icon: Database, label: 'PostgreSQL' },
+        { id: 'mysql', icon: Database, label: 'MySQL' },
+        { id: 'elasticsearch', icon: Search, label: 'Elasticsearch' },
+        { id: 'kafka', icon: Activity, label: 'Kafka' },
+        { id: 'rabbitmq', icon: MessageSquare, label: 'RabbitMQ' },
+        { id: 'vault', icon: Lock, label: 'Vault' },
+        { id: 'consul', icon: Network, label: 'Consul' },
+        { id: 'istio', icon: Workflow, label: 'Istio' },
+        { id: 'helm', icon: Package, label: 'Helm' },
+        { id: 'argocd', icon: RefreshCw, label: 'ArgoCD' },
+      ]
+    },
+    {
+      name: 'AWS Services',
+      shapes: [
+        { id: 'ec2', icon: Server, label: 'EC2' },
+        { id: 's3bucket', icon: Package, label: 'S3' },
+        { id: 'lambda', icon: Zap, label: 'Lambda' },
+        { id: 'rds', icon: Database, label: 'RDS' },
+        { id: 'dynamodb', icon: Table, label: 'DynamoDB' },
+        { id: 'vpc', icon: Shield, label: 'VPC' },
+        { id: 'apigateway', icon: Webhook, label: 'API Gateway' },
+        { id: 'cloudwatch', icon: Gauge, label: 'CloudWatch' },
+        { id: 'sns', icon: Bell, label: 'SNS' },
+        { id: 'sqs', icon: MessageSquare, label: 'SQS' },
+        { id: 'elasticache', icon: HardDrive, label: 'ElastiCache' },
+        { id: 'cloudfront', icon: Globe, label: 'CloudFront' },
+        { id: 'route53', icon: Router, label: 'Route 53' },
+        { id: 'ecs', icon: Container, label: 'ECS' },
+        { id: 'eks', icon: Boxes, label: 'EKS' },
+        { id: 'fargate', icon: CloudLightning, label: 'Fargate' },
+        { id: 'redshift', icon: Database, label: 'Redshift' },
+        { id: 'kinesis', icon: Activity, label: 'Kinesis' },
+        { id: 'stepfunction', icon: Workflow, label: 'Step Functions' },
+        { id: 'cognitouser', icon: User, label: 'Cognito' },
+        { id: 'iam', icon: Key, label: 'IAM' },
+        { id: 'secretsmanager', icon: Lock, label: 'Secrets Manager' },
+        { id: 'eventbridge', icon: Zap, label: 'EventBridge' },
+        { id: 'amplify', icon: Smartphone, label: 'Amplify' },
+        { id: 'athena', icon: Search, label: 'Athena' },
+        { id: 'glue', icon: Workflow, label: 'Glue' },
+        { id: 'emr', icon: Cpu, label: 'EMR' },
+        { id: 'sagemaker', icon: Lightbulb, label: 'SageMaker' },
+        { id: 'codepipeline', icon: Workflow, label: 'CodePipeline' },
+        { id: 'codebuild', icon: Hammer, label: 'CodeBuild' },
+        { id: 'codecommit', icon: GitCommit, label: 'CodeCommit' },
+        { id: 'codedeploy', icon: Upload, label: 'CodeDeploy' },
+        { id: 'elasticbeanstalk', icon: Layers, label: 'Elastic Beanstalk' },
+        { id: 'lightsail', icon: Lightbulb, label: 'Lightsail' },
+        { id: 'apprunner', icon: Play, label: 'App Runner' },
+        { id: 'batch', icon: ListOrdered, label: 'Batch' },
+      ]
+    },
+    {
+      name: 'Azure Services',
+      shapes: [
+        { id: 'azurevm', icon: Server, label: 'Virtual Machine' },
+        { id: 'azureblobstorage', icon: Package, label: 'Blob Storage' },
+        { id: 'azurefunctions', icon: Zap, label: 'Functions' },
+        { id: 'azuresql', icon: Database, label: 'SQL Database' },
+        { id: 'cosmosdb', icon: Globe, label: 'Cosmos DB' },
+        { id: 'azurevnet', icon: Shield, label: 'Virtual Network' },
+        { id: 'azureapim', icon: Webhook, label: 'API Management' },
+        { id: 'azuremonitor', icon: Gauge, label: 'Monitor' },
+        { id: 'azureservicebus', icon: MessageSquare, label: 'Service Bus' },
+        { id: 'azureeventhubs', icon: Activity, label: 'Event Hubs' },
+        { id: 'azurecdn', icon: Globe, label: 'CDN' },
+        { id: 'azuredns', icon: Router, label: 'DNS' },
+        { id: 'aks', icon: Boxes, label: 'AKS' },
+        { id: 'azurecontainerinstances', icon: Container, label: 'Container Instances' },
+        { id: 'azuresynapse', icon: Database, label: 'Synapse' },
+        { id: 'azuredatafactory', icon: Workflow, label: 'Data Factory' },
+        { id: 'azuread', icon: User, label: 'Active Directory' },
+        { id: 'azurekeyvault', icon: Key, label: 'Key Vault' },
+        { id: 'azurelogicapps', icon: Workflow, label: 'Logic Apps' },
+        { id: 'azuredevops', icon: GitBranch, label: 'DevOps' },
+        { id: 'azureappservice', icon: Globe, label: 'App Service' },
+        { id: 'azurefrontdoor', icon: Shield, label: 'Front Door' },
+        { id: 'azureml', icon: Lightbulb, label: 'Machine Learning' },
+        { id: 'azurecognitiveservices', icon: Cpu, label: 'Cognitive Services' },
+        { id: 'azureiot', icon: Wifi, label: 'IoT Hub' },
+        { id: 'azurenotificationhubs', icon: Bell, label: 'Notification Hubs' },
+        { id: 'azuresignalr', icon: Radio, label: 'SignalR' },
+        { id: 'azuremediaservices', icon: Play, label: 'Media Services' },
+      ]
+    },
+    {
+      name: 'Google Cloud',
+      shapes: [
+        { id: 'computeengine', icon: Server, label: 'Compute Engine' },
+        { id: 'cloudstorage', icon: Package, label: 'Cloud Storage' },
+        { id: 'cloudfunctions', icon: Zap, label: 'Cloud Functions' },
+        { id: 'cloudsql', icon: Database, label: 'Cloud SQL' },
+        { id: 'bigquery', icon: Table, label: 'BigQuery' },
+        { id: 'gcpvpc', icon: Shield, label: 'VPC' },
+        { id: 'apigee', icon: Webhook, label: 'Apigee' },
+        { id: 'cloudmonitoring', icon: Gauge, label: 'Cloud Monitoring' },
+        { id: 'pubsub', icon: MessageSquare, label: 'Pub/Sub' },
+        { id: 'cloudcdn', icon: Globe, label: 'Cloud CDN' },
+        { id: 'clouddns', icon: Router, label: 'Cloud DNS' },
+        { id: 'gke', icon: Boxes, label: 'GKE' },
+        { id: 'cloudrun', icon: Play, label: 'Cloud Run' },
+        { id: 'dataflow', icon: Workflow, label: 'Dataflow' },
+        { id: 'dataproc', icon: Cpu, label: 'Dataproc' },
+        { id: 'gcpiam', icon: Key, label: 'IAM' },
+        { id: 'secretmanager', icon: Lock, label: 'Secret Manager' },
+        { id: 'cloudscheduler', icon: RefreshCw, label: 'Cloud Scheduler' },
+        { id: 'cloudbuild', icon: Hammer, label: 'Cloud Build' },
+        { id: 'cloudsourcerepos', icon: GitCommit, label: 'Source Repositories' },
+        { id: 'appengine', icon: Globe, label: 'App Engine' },
+        { id: 'firestore', icon: Database, label: 'Firestore' },
+        { id: 'firebase', icon: Flame, label: 'Firebase' },
+        { id: 'vertexai', icon: Lightbulb, label: 'Vertex AI' },
+        { id: 'gcpiot', icon: Wifi, label: 'IoT Core' },
+        { id: 'memorystore', icon: HardDrive, label: 'Memorystore' },
+        { id: 'spanner', icon: Database, label: 'Spanner' },
+        { id: 'bigtable', icon: Table, label: 'Bigtable' },
+      ]
+    },
+    {
+      name: 'Networking',
+      shapes: [
+        { id: 'loadbalancer', icon: Scale, label: 'Load Balancer' },
+        { id: 'firewall', icon: Shield, label: 'Firewall' },
+        { id: 'router', icon: Router, label: 'Router' },
+        { id: 'switch', icon: Network, label: 'Switch' },
+        { id: 'gateway', icon: Webhook, label: 'Gateway' },
+        { id: 'dns', icon: Globe, label: 'DNS' },
+        { id: 'cdn', icon: Globe, label: 'CDN' },
+        { id: 'vpn', icon: Lock, label: 'VPN' },
+        { id: 'proxy', icon: Shield, label: 'Proxy' },
+        { id: 'nat', icon: ArrowLeftRight, label: 'NAT' },
+        { id: 'waf', icon: Shield, label: 'WAF' },
+        { id: 'ddos', icon: ShieldAlert, label: 'DDoS Protection' },
+      ]
+    },
+    {
+      name: 'Databases',
+      shapes: [
+        { id: 'sqldb', icon: Database, label: 'SQL Database' },
+        { id: 'nosqldb', icon: Database, label: 'NoSQL Database' },
+        { id: 'graphdb', icon: Network, label: 'Graph Database' },
+        { id: 'timeseries', icon: LineChart, label: 'Time Series DB' },
+        { id: 'cachedb', icon: HardDrive, label: 'Cache' },
+        { id: 'datawarehouse', icon: Database, label: 'Data Warehouse' },
+        { id: 'datalake', icon: Package, label: 'Data Lake' },
+        { id: 'replication', icon: RefreshCw, label: 'Replication' },
+        { id: 'sharding', icon: Boxes, label: 'Sharding' },
+        { id: 'backup', icon: Save, label: 'Backup' },
+      ]
+    },
   ];
 
   const colors = [
@@ -704,6 +889,148 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     'heart': Heart,
     'pentagon': Pentagon,
     'octagon': Octagon,
+    // Cloud & DevOps
+    'aws': Cloud,
+    'azure': CloudCog,
+    'gcp': CloudLightning,
+    'docker': Container,
+    'kubernetes': Boxes,
+    'terraform': Blocks,
+    'jenkins': Cog,
+    'cicd': Workflow,
+    'lambda': Zap,
+    's3bucket': Package,
+    'ec2': Server,
+    'rds': Database,
+    'vpc': Shield,
+    'apigateway': Webhook,
+    'cloudwatch': Gauge,
+    'sns': Bell,
+    'sqs': MessageSquare,
+    'elasticache': HardDrive,
+    'cloudfront': Globe,
+    'route53': Router,
+    'ecs': Container,
+    'eks': Boxes,
+    'fargate': CloudLightning,
+    'dynamodb': Table,
+    'redshift': Database,
+    'kinesis': Activity,
+    'stepfunction': Workflow,
+    'cognitouser': User,
+    'iam': Key,
+    // Extended Cloud & DevOps
+    'ansible': Settings,
+    'prometheus': Activity,
+    'grafana': BarChart3,
+    'nginx': Server,
+    'redis': Database,
+    'mongodb': Database,
+    'postgresql': Database,
+    'mysql': Database,
+    'elasticsearch': Search,
+    'kafka': Activity,
+    'rabbitmq': MessageSquare,
+    'vault': Lock,
+    'consul': Network,
+    'istio': Workflow,
+    'helm': Package,
+    'argocd': RefreshCw,
+    // Extended AWS
+    'secretsmanager': Lock,
+    'eventbridge': Zap,
+    'amplify': Smartphone,
+    'athena': Search,
+    'glue': Workflow,
+    'emr': Cpu,
+    'sagemaker': Lightbulb,
+    'codepipeline': Workflow,
+    'codebuild': Hammer,
+    'codecommit': GitCommit,
+    'codedeploy': Upload,
+    'elasticbeanstalk': Layers,
+    'lightsail': Lightbulb,
+    'apprunner': Play,
+    'batch': ListOrdered,
+    // Azure Services
+    'azurevm': Server,
+    'azureblobstorage': Package,
+    'azurefunctions': Zap,
+    'azuresql': Database,
+    'cosmosdb': Globe,
+    'azurevnet': Shield,
+    'azureapim': Webhook,
+    'azuremonitor': Gauge,
+    'azureservicebus': MessageSquare,
+    'azureeventhubs': Activity,
+    'azurecdn': Globe,
+    'azuredns': Router,
+    'aks': Boxes,
+    'azurecontainerinstances': Container,
+    'azuresynapse': Database,
+    'azuredatafactory': Workflow,
+    'azuread': User,
+    'azurekeyvault': Key,
+    'azurelogicapps': Workflow,
+    'azuredevops': GitBranch,
+    'azureappservice': Globe,
+    'azurefrontdoor': Shield,
+    'azureml': Lightbulb,
+    'azurecognitiveservices': Cpu,
+    'azureiot': Wifi,
+    'azurenotificationhubs': Bell,
+    'azuresignalr': Radio,
+    'azuremediaservices': Play,
+    // Google Cloud
+    'computeengine': Server,
+    'cloudstorage': Package,
+    'cloudfunctions': Zap,
+    'cloudsql': Database,
+    'bigquery': Table,
+    'gcpvpc': Shield,
+    'apigee': Webhook,
+    'cloudmonitoring': Gauge,
+    'pubsub': MessageSquare,
+    'cloudcdn': Globe,
+    'clouddns': Router,
+    'gke': Boxes,
+    'cloudrun': Play,
+    'dataflow': Workflow,
+    'dataproc': Cpu,
+    'gcpiam': Key,
+    'secretmanager': Lock,
+    'cloudscheduler': RefreshCw,
+    'cloudbuild': Hammer,
+    'cloudsourcerepos': GitCommit,
+    'appengine': Globe,
+    'firestore': Database,
+    'firebase': Flame,
+    'vertexai': Lightbulb,
+    'gcpiot': Wifi,
+    'memorystore': HardDrive,
+    'spanner': Database,
+    'bigtable': Table,
+    // Networking
+    'switch': Network,
+    'gateway': Webhook,
+    'dns': Globe,
+    'cdn': Globe,
+    'vpn': Lock,
+    'proxy': Shield,
+    'nat': ArrowLeftRight,
+    'waf': Shield,
+    'ddos': ShieldAlert,
+    // Databases
+    'sqldb': Database,
+    'nosqldb': Database,
+    'graphdb': Network,
+    'timeseries': LineChart,
+    'cachedb': HardDrive,
+    'datawarehouse': Database,
+    'datalake': Package,
+    'replication': RefreshCw,
+    'sharding': Boxes,
+    'backup': Save,
   };
 
   // Render Lucide icon to canvas - exact copy of sidebar icon
@@ -3634,41 +3961,81 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     event.target.value = '';
   }, [saveToUndoStack]);
 
-  // Canvas resize handler
+  // Canvas resize handler with debouncing to prevent clearing
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitializedRef = useRef(false);
+  
   useEffect(() => {
     const canvas = canvasRef.current;
     const overlayCanvas = overlayCanvasRef.current;
     const container = containerRef.current;
     if (!canvas || !overlayCanvas || !container) return;
 
-    const resizeCanvas = () => {
+    const resizeCanvas = (forceReload = false) => {
       if (container) {
         const rect = container.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-        overlayCanvas.width = rect.width;
-        overlayCanvas.height = rect.height;
         const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.fillStyle = backgroundColorRef.current;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Only resize and reload if dimensions actually changed or first load
+        if (!hasInitializedRef.current || forceReload) {
+          canvas.width = rect.width;
+          canvas.height = rect.height;
+          overlayCanvas.width = rect.width;
+          overlayCanvas.height = rect.height;
+          if (ctx) {
+            ctx.fillStyle = backgroundColorRef.current;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+          loadDrawingHistory();
+          hasInitializedRef.current = true;
+        } else {
+          // For subsequent resizes, preserve content by saving and restoring
+          const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height);
+          const oldWidth = canvas.width;
+          const oldHeight = canvas.height;
+          
+          canvas.width = rect.width;
+          canvas.height = rect.height;
+          overlayCanvas.width = rect.width;
+          overlayCanvas.height = rect.height;
+          
+          if (ctx) {
+            ctx.fillStyle = backgroundColorRef.current;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Restore previous content if we had any
+            if (imageData && oldWidth > 0 && oldHeight > 0) {
+              ctx.putImageData(imageData, 0, 0);
+            }
+          }
         }
-        loadDrawingHistory();
       }
+    };
+
+    // Debounced resize handler
+    const debouncedResize = () => {
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+      resizeTimeoutRef.current = setTimeout(() => {
+        resizeCanvas(false);
+      }, 100);
     };
 
     // Use ResizeObserver to detect container size changes (sidebar toggle)
     const resizeObserver = new ResizeObserver(() => {
-      resizeCanvas();
+      debouncedResize();
     });
     
     resizeObserver.observe(container);
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas(true); // Force reload on first mount
+    window.addEventListener('resize', debouncedResize);
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', debouncedResize);
       resizeObserver.disconnect();
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
     };
   }, [loadDrawingHistory]);
 
@@ -3759,6 +4126,14 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip keyboard shortcuts if user is typing in an input or textarea
+      const activeElement = document.activeElement;
+      const isTyping = activeElement instanceof HTMLInputElement || 
+                       activeElement instanceof HTMLTextAreaElement ||
+                       activeElement?.getAttribute('contenteditable') === 'true';
+      
+      if (isTyping) return;
+      
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 'z') {
           e.preventDefault();
@@ -4068,13 +4443,18 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     }
   }, [boardId]);
 
+  // Throttle ref for laser pointer
+  const laserThrottleRef = useRef<number>(0);
+    
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const { x, y } = getCoordinates(e);
     emitCursorPosition(x, y, isDrawing);
     
-    // Laser pointer - broadcast position
+    // Laser pointer - broadcast position (throttled)
     if (tool === 'laser') {
-      if (socketRef.current) {
+      const now = Date.now();
+      if (socketRef.current && now - laserThrottleRef.current > 30) {
+        laserThrottleRef.current = now;
         socketRef.current.emit('laser', {
           boardId,
           x,
@@ -4128,6 +4508,9 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     }
   };
 
+  // Throttle ref for highlight events
+  const highlightThrottleRef = useRef<number>(0);
+  
   const continueHighlighting = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!lastPosRef.current) return;
     
@@ -4148,7 +4531,10 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    if (socketRef.current) {
+    // Throttle socket emit to reduce network load (every 16ms ~ 60fps)
+    const now = Date.now();
+    if (socketRef.current && now - highlightThrottleRef.current > 16) {
+      highlightThrottleRef.current = now;
       socketRef.current.emit('highlight', {
         boardId,
         x,
@@ -4212,6 +4598,9 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     emitCursorPosition(x, y, true);
   };
 
+  // Throttle ref for draw events
+  const drawThrottleRef = useRef<number>(0);
+  
   const continueDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     if (!isDrawing || !lastPosRef.current) return;
@@ -4236,7 +4625,10 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     
     ctx.globalAlpha = 1;
 
-    if (socketRef.current) {
+    // Throttle socket emit to reduce network load (every 16ms ~ 60fps)
+    const now = Date.now();
+    if (socketRef.current && now - drawThrottleRef.current > 16) {
+      drawThrottleRef.current = now;
       socketRef.current.emit('draw', {
         boardId,
         x,

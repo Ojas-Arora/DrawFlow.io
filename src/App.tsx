@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Copy, Check, LogOut, Share2, UserCircle, MessageCircle, ChevronRight, ChevronLeft } from 'lucide-react';
 import BoardSetup from './components/BoardSetup';
 import Whiteboard from './components/Whiteboard';
 import Chat from './components/Chat';
 import UserProfile from './components/UserProfile';
 import { getOrCreateSession } from './lib/userSession';
+import { getSocket } from './lib/socket';
+
+interface ChatMessage {
+  odId: string;
+  userId: string;
+  username: string;
+  message: string;
+  userColor: string;
+  createdAt: Date;
+}
 
 function App() {
   const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
@@ -12,6 +22,49 @@ function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(getOrCreateSession());
   const [showChat, setShowChat] = useState(true);
+  
+  // Lifted chat state
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
+
+  // Socket connection for chat messages - persists regardless of chat visibility
+  useEffect(() => {
+    if (!currentBoardId) return;
+    
+    socketRef.current = getSocket();
+    const socket = socketRef.current;
+
+    // Listen for incoming messages
+    const handleChatMessage = (message: ChatMessage) => {
+      setMessages((prev) => [...prev, message]);
+      // Increment unread count if chat is closed
+      if (!showChat) {
+        setUnreadCount((prev) => prev + 1);
+      }
+    };
+
+    socket.on('chat-message', handleChatMessage);
+
+    return () => {
+      socket.off('chat-message', handleChatMessage);
+    };
+  }, [currentBoardId, showChat]);
+
+  // Reset unread count when chat is opened
+  useEffect(() => {
+    if (showChat) {
+      setUnreadCount(0);
+    }
+  }, [showChat]);
+
+  // Clear messages when leaving board
+  useEffect(() => {
+    if (!currentBoardId) {
+      setMessages([]);
+      setUnreadCount(0);
+    }
+  }, [currentBoardId]);
 
   const copyBoardId = () => {
     if (currentBoardId) {
@@ -175,6 +228,15 @@ function App() {
               <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
             )}
             
+            {/* Unread message count badge */}
+            {!showChat && unreadCount > 0 && (
+              <div className="absolute -top-1 -left-1 md:-top-2 md:-left-2 min-w-[18px] md:min-w-[24px] h-[18px] md:h-[24px] bg-red-500 rounded-full flex items-center justify-center border-2 border-white shadow-lg animate-bounce z-20">
+                <span className="text-[9px] md:text-xs font-bold text-white px-1">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              </div>
+            )}
+            
             {/* Online indicator dot */}
             <div className={`absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 transition-all duration-300 ${
               !showChat 
@@ -206,12 +268,14 @@ function App() {
           }
         `}</style>
 
-        {/* Chat Sidebar */}
-        {showChat && (
-          <div className="w-48 md:w-80 m-1 md:m-2 md:ml-1 flex-shrink-0 bg-slate-800 rounded-xl md:rounded-2xl shadow-2xl border border-slate-700/50 transition-all duration-300">
-            <Chat boardId={currentBoardId} />
-          </div>
-        )}
+        {/* Chat Sidebar - always rendered but hidden to preserve state */}
+        <div className={`${showChat ? 'w-48 md:w-80' : 'w-0 overflow-hidden'} m-1 md:m-2 md:ml-1 flex-shrink-0 bg-slate-800 rounded-xl md:rounded-2xl shadow-2xl border border-slate-700/50 transition-all duration-300`}>
+          <Chat 
+            boardId={currentBoardId} 
+            messages={messages}
+            setMessages={setMessages}
+          />
+        </div>
       </div>
 
       {/* User Profile Modal */}
