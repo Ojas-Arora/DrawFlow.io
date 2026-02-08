@@ -37,6 +37,7 @@ import {
 import { getUserId, getUsername, getUserColor } from '../lib/userSession';
 import { getSocket } from '../lib/socket';
 import { api } from '../lib/api';
+import { techLogoCategories, searchTechLogos, getTechLogoByLabel, techLogoMap } from './TechLogos';
 
 type Tool = 'select' | 'pan' | 'pen' | 'eraser' | 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'highlighter' | 'laser' | 'stickynote' | 'image' | 'triangle' | 'star' | 'heart' | 'diamond' | 'hexagon' | 'parallelogram' | 'cylinder' | 'cloud' | 'callout' | 'document' | 'database' | 'process' | 'decision' | 'connector' | 'pentagon' | 'octagon' | 'icon' | 
 // System Design shapes
@@ -145,6 +146,7 @@ interface ShapeData {
   opacity: number;
   fill?: boolean;
   fillColor?: string;
+  techLogoId?: string;  // ID for tech logos from Simple Icons
 }
 
 interface TextData {
@@ -197,9 +199,12 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
   const [darkMode, setDarkMode] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [showShapesSidebar, setShowShapesSidebar] = useState(true);
+  const [sidebarTab, setSidebarTab] = useState<'shapes' | 'logos'>('shapes');
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['General']);
+  const [expandedLogoCategories, setExpandedLogoCategories] = useState<string[]>(['AWS Services']);
   const [shapeSearch, setShapeSearch] = useState('');
-  const [selectedShapeIcon, setSelectedShapeIcon] = useState<{ icon: any; label: string } | null>(null);
+  const [logoSearch, setLogoSearch] = useState('');
+  const [selectedShapeIcon, setSelectedShapeIcon] = useState<{ icon: any; label: string; id?: string; color?: string } | null>(null);
   
   // Cache for rendered icon images
   const iconImageCache = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -218,6 +223,14 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const toggleLogoCategory = (category: string) => {
+    setExpandedLogoCategories(prev => 
       prev.includes(category) 
         ? prev.filter(c => c !== category)
         : [...prev, category]
@@ -247,6 +260,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
         { id: 'line', icon: Minus, label: 'Line' },
         { id: 'arrow', icon: ArrowRight, label: 'Arrow' },
         { id: 'bidirectional', icon: ArrowLeftRight, label: 'Bidirectional' },
+        { id: 'connector', icon: GitBranch, label: 'Connector' },
         { id: 'text', icon: Type, label: 'Text' },
         { id: 'stickynote', icon: StickyNote, label: 'Sticky Note' },
         { id: 'image', icon: ImageIcon, label: 'Image' },
@@ -1146,7 +1160,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
 
   // Draw shape on canvas
   const drawShape = useCallback((ctx: CanvasRenderingContext2D, shape: ShapeData) => {
-    const { type, startX, startY, endX, endY, color: shapeColor, lineWidth: shapeWidth, strokeStyle: shapeStroke, opacity: shapeOpacity, fill: shapeFill, fillColor } = shape;
+    const { type, startX, startY, endX, endY, color: shapeColor, lineWidth: shapeWidth, strokeStyle: shapeStroke, opacity: shapeOpacity, fill: shapeFill, fillColor, techLogoId } = shape;
 
     const width = endX - startX;
     const height = endY - startY;
@@ -1154,6 +1168,58 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
     const centerY = startY + height / 2;
 
     ctx.globalAlpha = shapeOpacity / 100;
+
+    // Handle tech logos from Simple Icons
+    if (techLogoId && techLogoMap[techLogoId]) {
+      const techLogo = techLogoMap[techLogoId];
+      const IconComponent = techLogo.icon;
+      const logoColor = techLogo.color;
+      
+      const size = Math.min(Math.abs(width), Math.abs(height));
+      const actualX = width < 0 ? startX + width : startX;
+      const actualY = height < 0 ? startY + height : startY;
+      const cacheKey = `techlogo-${techLogoId}-${logoColor}-${size}`;
+      
+      // Check cache first
+      const cachedImg = iconImageCache.current.get(cacheKey);
+      if (cachedImg && cachedImg.complete) {
+        ctx.globalAlpha = shapeOpacity / 100;
+        ctx.drawImage(cachedImg, actualX, actualY, Math.abs(width), Math.abs(height));
+        ctx.globalAlpha = 1;
+        return;
+      }
+      
+      // Create SVG string from Simple Icon - Simple Icons use 'fill' not 'stroke'
+      const svgString = renderToStaticMarkup(
+        createElement(IconComponent, {
+          size: size,
+          color: logoColor,
+        })
+      );
+      
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      
+      const img = new Image();
+      img.onload = () => {
+        iconImageCache.current.set(cacheKey, img);
+        ctx.globalAlpha = shapeOpacity / 100;
+        ctx.drawImage(img, actualX, actualY, Math.abs(width), Math.abs(height));
+        ctx.globalAlpha = 1;
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+      
+      // Draw temporary placeholder while loading
+      ctx.globalAlpha = shapeOpacity / 100;
+      ctx.strokeStyle = logoColor;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(actualX, actualY, Math.abs(width), Math.abs(height));
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      return;
+    }
 
     // Basic geometric shapes that should use precise canvas drawing instead of icons
     const basicGeometricShapes = [
@@ -1436,8 +1502,7 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       }
       case 'database':
       case 'process':
-      case 'decision':
-      case 'connector': {
+      case 'decision': {
         // Same as cylinder for database-like shapes
         const ellipseH = Math.abs(height) * 0.15;
         ctx.ellipse(centerX, startY + ellipseH, Math.abs(width) / 2, ellipseH, 0, 0, 2 * Math.PI);
@@ -1456,6 +1521,36 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           ctx.fill();
         }
         ctx.stroke();
+        break;
+      }
+      case 'connector': {
+        // Elbow connector - horizontal then vertical or vertical then horizontal
+        const midX = startX + width / 2;
+        const midY = startY + height / 2;
+        
+        // Determine best path based on direction
+        if (Math.abs(width) > Math.abs(height)) {
+          // Go horizontal first, then vertical
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(midX, startY);
+          ctx.lineTo(midX, endY);
+          ctx.lineTo(endX, endY);
+        } else {
+          // Go vertical first, then horizontal
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(startX, midY);
+          ctx.lineTo(endX, midY);
+          ctx.lineTo(endX, endY);
+        }
+        ctx.stroke();
+        
+        // Add small circles at endpoints
+        ctx.beginPath();
+        ctx.arc(startX, startY, 4, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(endX, endY, 4, 0, 2 * Math.PI);
+        ctx.fill();
         break;
       }
       // ===== ARROW SHAPES =====
@@ -4491,12 +4586,13 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
             startY: shapeStartRef.current.y,
             endX: x,
             endY: y,
-            color,
+            color: (tool === 'icon' && selectedShapeIcon?.color) ? selectedShapeIcon.color : color,
             lineWidth,
             strokeStyle,
             opacity,
             fill,
             fillColor: color,
+            techLogoId: (tool === 'icon' && selectedShapeIcon?.id) ? selectedShapeIcon.id : undefined,
           });
         }
       } else if (tool === 'highlighter') {
@@ -4673,12 +4769,13 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
           startY: shapeStartRef.current.y,
           endX,
           endY,
-          color,
+          color: (tool === 'icon' && selectedShapeIcon?.color) ? selectedShapeIcon.color : color,
           lineWidth,
           strokeStyle,
           opacity,
           fill,
           fillColor: color,
+          techLogoId: (tool === 'icon' && selectedShapeIcon?.id) ? selectedShapeIcon.id : undefined,
         };
         
         drawShape(ctx, shapeData);
@@ -5165,16 +5262,45 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Shapes Panel (Like diagrams.net) */}
         <div 
-          className={`flex-shrink-0 transition-all duration-300 bg-slate-800/50 border-r border-slate-700/50 overflow-hidden ${showShapesSidebar ? 'w-32 md:w-56' : 'w-0'}`}
+          className={`flex-shrink-0 transition-all duration-300 bg-slate-800/50 border-r border-slate-700/50 overflow-hidden ${showShapesSidebar ? 'w-36 md:w-64' : 'w-0'}`}
         >
-          <div className="w-32 md:w-56 h-full overflow-y-auto p-1 md:p-2">
+          <div className="w-36 md:w-64 h-full flex flex-col">
+            {/* Tabs */}
+            <div className="flex border-b border-slate-700/50 p-1 gap-1 flex-shrink-0">
+              <button
+                onClick={() => setSidebarTab('shapes')}
+                className={`flex-1 px-2 py-1.5 md:py-2 text-[10px] md:text-xs font-medium rounded-md transition-all ${
+                  sidebarTab === 'shapes' 
+                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' 
+                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <Shapes className="w-3 h-3 md:w-4 md:h-4 mx-auto mb-0.5" />
+                Shapes
+              </button>
+              <button
+                onClick={() => setSidebarTab('logos')}
+                className={`flex-1 px-2 py-1.5 md:py-2 text-[10px] md:text-xs font-medium rounded-md transition-all ${
+                  sidebarTab === 'logos' 
+                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' 
+                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <Cloud className="w-3 h-3 md:w-4 md:h-4 mx-auto mb-0.5" />
+                Tech Logos
+              </button>
+            </div>
+
+            {/* Shapes Tab Content */}
+            {sidebarTab === 'shapes' && (
+            <div className="flex-1 overflow-y-auto p-1 md:p-2">
             {/* Search */}
             <div className="mb-1.5 md:mb-3 relative">
               <input
                 type="text"
                 value={shapeSearch}
                 onChange={(e) => setShapeSearch(e.target.value)}
-                placeholder="🔍 Search..."
+                placeholder="🔍 Search shapes..."
                 className="w-full px-1.5 md:px-3 py-1 md:py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-[10px] md:text-sm text-slate-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50"
               />
               {shapeSearch && (
@@ -5284,6 +5410,119 @@ export default function Whiteboard({ boardId }: WhiteboardProps) {
                 )}
               </div>
             ))}
+          </div>
+            )}
+
+            {/* Tech Logos Tab Content */}
+            {sidebarTab === 'logos' && (
+            <div className="flex-1 overflow-y-auto p-1 md:p-2">
+            {/* Search */}
+            <div className="mb-1.5 md:mb-3 relative">
+              <input
+                type="text"
+                value={logoSearch}
+                onChange={(e) => setLogoSearch(e.target.value)}
+                placeholder="🔍 Search AWS, Azure, GCP..."
+                className="w-full px-1.5 md:px-3 py-1 md:py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-[10px] md:text-sm text-slate-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50"
+              />
+              {logoSearch && (
+                <button
+                  onClick={() => setLogoSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Search Results for Logos */}
+            {logoSearch && (
+              <div className="mb-2 md:mb-3">
+                <div className="text-[10px] md:text-xs text-slate-400 px-1 md:px-2 mb-1 md:mb-2">Search Results</div>
+                <div className="grid grid-cols-4 gap-0.5 md:gap-1 p-1 md:p-2 bg-slate-700/30 rounded-md md:rounded-lg">
+                  {searchTechLogos(logoSearch).slice(0, 24).map((logo, idx) => {
+                    const LogoIcon = logo.icon;
+                    return (
+                      <button
+                        key={`logo-search-${logo.id}-${idx}`}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          setTool('icon' as Tool);
+                          setSelectedShapeIcon({ icon: logo.icon, label: logo.label, id: logo.id, color: logo.color });
+                          setLogoSearch('');
+                        }}
+                        className={`p-1.5 md:p-2 rounded-md md:rounded-lg border transition-all hover:bg-slate-700/50 touch-manipulation active:scale-95 ${
+                          selectedShapeIcon?.label === logo.label
+                            ? 'bg-cyan-500/20 border-cyan-500'
+                            : 'border-slate-600/50 hover:border-slate-500'
+                        }`}
+                        title={`${logo.label} (${logo.category})`}
+                      >
+                        <LogoIcon className="w-4 h-4 md:w-5 md:h-5" color={logo.color} />
+                      </button>
+                    );
+                  })}
+                  {searchTechLogos(logoSearch).length === 0 && (
+                    <div className="col-span-4 text-center text-slate-500 text-xs py-2">
+                      No logos found
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Logo Categories - Show when not searching */}
+            {!logoSearch && techLogoCategories.map((category) => (
+              <div key={category.name} className="mb-1 md:mb-2">
+                <button
+                  onClick={() => toggleLogoCategory(category.name)}
+                  className="w-full flex items-center justify-between px-1 md:px-2 py-1 md:py-1.5 text-[10px] md:text-sm font-medium text-slate-300 hover:bg-slate-700/50 rounded-md md:rounded-lg transition-all"
+                >
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <ChevronDown 
+                      className={`w-3 h-3 md:w-3.5 md:h-3.5 transition-transform ${expandedLogoCategories.includes(category.name) ? '' : '-rotate-90'}`}
+                    />
+                    <span className="truncate">{category.name}</span>
+                  </div>
+                  <div 
+                    className="w-2 h-2 rounded-full flex-shrink-0" 
+                    style={{ backgroundColor: category.color }}
+                  />
+                </button>
+                
+                {expandedLogoCategories.includes(category.name) && (
+                  <div className="grid grid-cols-4 gap-0.5 md:gap-1 p-1 md:p-2">
+                    {category.logos.map((logo, idx) => {
+                      const LogoIcon = logo.icon;
+                      return (
+                        <button
+                          key={`${logo.id}-${idx}`}
+                          onPointerDown={(e) => {
+                            e.preventDefault();
+                            setTool('icon' as Tool);
+                            setSelectedShapeIcon({ icon: logo.icon, label: logo.label, id: logo.id, color: logo.color });
+                          }}
+                          onClick={() => {
+                            setTool('icon' as Tool);
+                            setSelectedShapeIcon({ icon: logo.icon, label: logo.label, id: logo.id, color: logo.color });
+                          }}
+                          className={`p-1.5 md:p-2 rounded-md md:rounded-lg border transition-all hover:bg-slate-700/50 touch-manipulation active:scale-95 ${
+                            selectedShapeIcon?.label === logo.label
+                              ? 'bg-cyan-500/20 border-cyan-500'
+                              : 'border-slate-600/50 hover:border-slate-500'
+                          }`}
+                          title={logo.label}
+                        >
+                          <LogoIcon className="w-4 h-4 md:w-5 md:h-5" color={logo.color} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+            )}
           </div>
         </div>
 
