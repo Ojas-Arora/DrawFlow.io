@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { PlusCircle, LogIn, Users, Palette, MessageSquare, Zap, Lock, Unlock, Eye, EyeOff, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { PlusCircle, LogIn, Users, Palette, MessageSquare, Zap, Lock, Unlock, Eye, EyeOff, Shield, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { getUsername, setUsername as saveUsername, getUserId, getUserColor } from '../lib/userSession';
-import { api } from '../lib/api';
+import { api, checkServerHealth, warmUpServer, ServerStatus } from '../lib/api';
 
 interface BoardSetupProps {
   onBoardSelect: (boardId: string) => void;
@@ -26,6 +26,10 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
+  // Server status for cold start handling
+  const [serverStatus, setServerStatus] = useState<ServerStatus>('checking');
+  const [serverLatency, setServerLatency] = useState<number | null>(null);
+  
   // Private room states
   const [isPrivate, setIsPrivate] = useState(false);
   const [roomPassword, setRoomPassword] = useState('');
@@ -33,6 +37,46 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
   const [joinPassword, setJoinPassword] = useState('');
   const [showJoinPassword, setShowJoinPassword] = useState(false);
   const [pendingPrivateBoard, setPendingPrivateBoard] = useState<{ boardId: string; title: string } | null>(null);
+
+  // Warm up server on component mount
+  useEffect(() => {
+    let isMounted = true;
+    
+    const initServer = async () => {
+      setServerStatus('checking');
+      
+      // Quick health check first
+      const quickCheck = await checkServerHealth(3000);
+      if (!isMounted) return;
+      
+      if (quickCheck.status === 'online') {
+        setServerStatus('online');
+        setServerLatency(quickCheck.latency || null);
+        return;
+      }
+      
+      // Server is waking up - show status and continue warming
+      setServerStatus('waking');
+      
+      // Continue warming up in background
+      const finalStatus = await warmUpServer();
+      if (!isMounted) return;
+      
+      setServerStatus(finalStatus);
+      if (finalStatus === 'online') {
+        const check = await checkServerHealth(3000);
+        if (isMounted && check.latency) {
+          setServerLatency(check.latency);
+        }
+      }
+    };
+    
+    initServer();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const createBoard = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,6 +272,46 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
                 </div>
               </div>
 
+              {/* Server Status Indicator */}
+              <div className={`mb-3 md:mb-4 p-2 md:p-3 rounded-lg md:rounded-xl border ${
+                serverStatus === 'online' 
+                  ? 'bg-green-500/10 border-green-500/30' 
+                  : serverStatus === 'waking' || serverStatus === 'checking'
+                  ? 'bg-yellow-500/10 border-yellow-500/30'
+                  : 'bg-red-500/10 border-red-500/30'
+              }`}>
+                <div className="flex items-center justify-center gap-2">
+                  {serverStatus === 'checking' && (
+                    <>
+                      <Loader2 className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 animate-spin" />
+                      <span className="text-yellow-300 text-[10px] md:text-xs font-medium">Connecting to server...</span>
+                    </>
+                  )}
+                  {serverStatus === 'waking' && (
+                    <>
+                      <Loader2 className="w-3 h-3 md:w-4 md:h-4 text-yellow-400 animate-spin" />
+                      <span className="text-yellow-300 text-[10px] md:text-xs font-medium">
+                        🔥 Server is waking up (may take 30-60s)...
+                      </span>
+                    </>
+                  )}
+                  {serverStatus === 'online' && (
+                    <>
+                      <Wifi className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
+                      <span className="text-green-300 text-[10px] md:text-xs font-medium">
+                        Server online {serverLatency ? `(${serverLatency}ms)` : ''}
+                      </span>
+                    </>
+                  )}
+                  {serverStatus === 'offline' && (
+                    <>
+                      <WifiOff className="w-3 h-3 md:w-4 md:h-4 text-red-400" />
+                      <span className="text-red-300 text-[10px] md:text-xs font-medium">Server offline - please refresh</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
               {/* Username input */}
               <div className="mb-3 md:mb-6">
                 <label className="block text-[10px] md:text-sm font-semibold text-white/90 mb-1 md:mb-2">👤 Your Display Name</label>
@@ -313,15 +397,24 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
                   
                   <button
                     type="submit"
-                    disabled={!boardName.trim() || !username.trim() || isLoading || (isPrivate && roomPassword.length < 4)}
+                    disabled={!boardName.trim() || !username.trim() || isLoading || (isPrivate && roomPassword.length < 4) || serverStatus !== 'online'}
                     className={`w-full px-2 md:px-4 py-2 md:py-3 text-white rounded-lg md:rounded-xl font-bold text-xs md:text-base hover:shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-1 md:gap-2 ${
                       isPrivate 
                         ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:shadow-amber-500/25' 
                         : 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:shadow-cyan-500/25'
                     }`}
                   >
-                    {isPrivate ? <Lock className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]" /> : <PlusCircle className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]" />}
-                    {isLoading ? 'Creating...' : isPrivate ? 'Create Private Board' : 'Create Board'}
+                    {serverStatus === 'waking' || serverStatus === 'checking' ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 md:w-[18px] md:h-[18px] animate-spin" />
+                        Waiting for server...
+                      </>
+                    ) : (
+                      <>
+                        {isPrivate ? <Lock className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]" /> : <PlusCircle className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]" />}
+                        {isLoading ? 'Creating...' : isPrivate ? 'Create Private Board' : 'Create Board'}
+                      </>
+                    )}
                   </button>
                 </form>
               </div>
@@ -355,11 +448,20 @@ export default function BoardSetup({ onBoardSelect }: BoardSetupProps) {
                   />
                   <button
                     type="submit"
-                    disabled={!joinBoardId.trim() || !username.trim() || isLoading}
+                    disabled={!joinBoardId.trim() || !username.trim() || isLoading || serverStatus !== 'online'}
                     className="w-full px-2 md:px-4 py-2 md:py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg md:rounded-xl font-bold text-xs md:text-base hover:shadow-lg hover:shadow-green-500/25 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-1 md:gap-2"
                   >
-                    <LogIn className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]" />
-                    {isLoading ? 'Joining...' : 'Join Board'}
+                    {serverStatus === 'waking' || serverStatus === 'checking' ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 md:w-[18px] md:h-[18px] animate-spin" />
+                        Waiting for server...
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]" />
+                        {isLoading ? 'Joining...' : 'Join Board'}
+                      </>
+                    )}
                   </button>
                 </form>
               </div>

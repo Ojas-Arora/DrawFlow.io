@@ -14,3 +14,5 @@ services:
         value: https://collaborative-white-board-wheat.vercel.app
       - key: NODE_ENV
         value: production
+      - key: SELF_URL
+        value: https://whiteboard-backend-rzxs.onrender.com

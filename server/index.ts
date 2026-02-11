@@ -107,13 +107,44 @@ const checkDBConnection = (req: any, res: any, next: any) => {
 };
 
 // API Routes
+// Lightweight health check - doesn't require DB
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     db: isDBConnected ? 'connected' : 'disconnected',
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
   });
 });
+
+// Ultra-lightweight ping endpoint for keep-alive
+app.get('/api/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
+// Self-ping to keep server warm (optional - helps with cold starts)
+// Only runs in production and pings itself every 10 minutes
+const SELF_URL = process.env.RENDER_EXTERNAL_URL || process.env.SELF_URL;
+if (NODE_ENV === 'production' && SELF_URL) {
+  const keepAliveInterval = 10 * 60 * 1000; // 10 minutes
+  
+  const selfPing = async () => {
+    try {
+      const response = await fetch(`${SELF_URL}/api/ping`);
+      if (response.ok) {
+        console.log('🏓 Keep-alive ping successful');
+      }
+    } catch (error) {
+      console.log('⚠️ Keep-alive ping failed (server may be restarting)');
+    }
+  };
+  
+  // Start self-ping after server is fully ready
+  setTimeout(() => {
+    setInterval(selfPing, keepAliveInterval);
+    console.log(`🔄 Keep-alive enabled: pinging ${SELF_URL} every 10 minutes`);
+  }, 30000); // Wait 30s before first interval
+}
 
 // Apply DB check to all protected routes
 app.use('/api/', checkDBConnection);
